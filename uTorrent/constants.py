@@ -1,5 +1,4 @@
-#usage - UITorrentEnum.UI_TORRENT_HASH
-#TODO: creae a better enum!
+#TODO: CHANGE EVERYTHING!!
 
 
 class UITorrentEnum:
@@ -38,7 +37,7 @@ class UITorrentStatusEnum:
 class TorrentFile(object):
     def __init__(self, torrentjson):
         self.hash = torrentjson[UITorrentEnum.UI_TORRENT_HASH]
-        self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS]
+        self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS] #UITorrentStatusEnum!
         self.name = torrentjson[UITorrentEnum.UI_TORRENT_NAME]
         self.size = torrentjson[UITorrentEnum.UI_TORRENT_SIZE]
         self.percent_progress = torrentjson[UITorrentEnum.UI_TORRENT_PERCENT_PROGRESS]
@@ -62,4 +61,4 @@ class TorrentFile(object):
     def get_status(self):
         if self.percent_progress / 10 == 100:
             return "Finished"
-        return "good job"
+        return
