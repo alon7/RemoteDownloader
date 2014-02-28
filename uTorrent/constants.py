@@ -1,4 +1,5 @@
 
+#usage - UITorrentEnum.UI_TORRENT_HASH
 class UITorrentEnum:
     UI_TORRENT_HASH, \
     UI_TORRENT_STATUS, \
