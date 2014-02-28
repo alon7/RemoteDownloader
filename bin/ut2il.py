@@ -2,9 +2,9 @@
 
 """
 ut2il.py is a set of methods (with command line opts) to display useful
-development/debugging information from �Torrent
+development/debugging information from Torrent
 
-ut2il.py <- �T util (the name derivation) [makes it easier to tab to]
+ut2il.py <-  util (the name derivation) [makes it easier to tab to]
 
 % ut2il.py --help
 Usage: ut2il.py [options]

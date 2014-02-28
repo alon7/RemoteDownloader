@@ -27,8 +27,6 @@ from urllib import quote
 from constants import *
 import json
 
-def passs():
-    pass
 #	uTorrent
 #
 #	Provides a handle with fine grained torrent state
