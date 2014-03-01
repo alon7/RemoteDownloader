@@ -9,7 +9,7 @@ import io
 # TODO: unzip subtitles zip files
 
 
-class SubtitleHelper():
+class SubtitleCoIl():
 
     CONFIG = ConfigParser.RawConfigParser()
     CONFIG.readfp(open('..\configuration\subtitlesConfig.cfg'))
