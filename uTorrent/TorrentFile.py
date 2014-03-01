@@ -46,7 +46,7 @@ class TorrentFile(object):
         self.percent_progress = torrentjson[UITorrentEnum.UI_TORRENT_PERCENT_PROGRESS]
         self.downloaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED], 'size')
         self.uploaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOADED], 'size')
-        self.ratio = torrentjson[UITorrentEnum.UI_TORRENT_RATIO] / 1000
+        self.ratio = torrentjson[UITorrentEnum.UI_TORRENT_RATIO] / 1000.0  # bad practice
         self.upload_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOAD_SPEED], 'speed')
         self.download_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOAD_SPEED], 'speed')
         self.eta = torrentjson[UITorrentEnum.UI_TORRENT_ETA]
@@ -72,10 +72,10 @@ class TorrentFile(object):
         elif self.status & UITorrentStatusEnum.UI_TORRENT_ERROR:
             return "Error"
         else:
-            return "WTF! {0} unknown error code".format(self.status)
+            return "WTF! {0} unknown status code".format(self.status)
 
     def get_eta(self):
-        if self.fullstatus == "Started":
+        if self.full_status == "Started":
             return eta_seconds_to_datetime(self.eta)
         else:
             return "N\A"
