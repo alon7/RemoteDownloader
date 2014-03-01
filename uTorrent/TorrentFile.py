@@ -1,5 +1,6 @@
 #usage - UITorrentEnum.UI_TORRENT_HASH
 #TODO: creae a better enum!
+import datetime
 
 
 class UITorrentEnum:
@@ -39,15 +40,15 @@ class UITorrentStatusEnum:
 class TorrentFile(object):
     def __init__(self, torrentjson):
         self.hash = torrentjson[UITorrentEnum.UI_TORRENT_HASH]
-        self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS] #UITorrentStatusEnum!
+        self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS]  # UITorrentStatusEnum!
         self.name = torrentjson[UITorrentEnum.UI_TORRENT_NAME]
-        self.size = torrentjson[UITorrentEnum.UI_TORRENT_SIZE]
+        self.size = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_SIZE], 'size')
         self.percent_progress = torrentjson[UITorrentEnum.UI_TORRENT_PERCENT_PROGRESS]
-        self.downloaded = torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED]
-        self.uploaded = torrentjson[UITorrentEnum.UI_TORRENT_UPLOADED]
-        self.ratio = torrentjson[UITorrentEnum.UI_TORRENT_RATIO]
-        self.upload_speed = torrentjson[UITorrentEnum.UI_TORRENT_UPLOAD_SPEED]
-        self.download_speed = torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOAD_SPEED]
+        self.downloaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED], 'size')
+        self.uploaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOADED], 'size')
+        self.ratio = torrentjson[UITorrentEnum.UI_TORRENT_RATIO] / 1000
+        self.upload_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOAD_SPEED], 'speed')
+        self.download_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOAD_SPEED], 'speed')
         self.eta = torrentjson[UITorrentEnum.UI_TORRENT_ETA]
         self.label = torrentjson[UITorrentEnum.UI_TORRENT_LABEL]
         self.peers_connected = torrentjson[UITorrentEnum.UI_TORRENT_PEERS_CONNECTED]
@@ -58,9 +59,39 @@ class TorrentFile(object):
         self.torrent_queue_order = torrentjson[UITorrentEnum.UI_TORRENT_TORRENT_QUEUE_ORDER]
         self.remaining = torrentjson[UITorrentEnum.UI_TORRENT_REMAINING]
 
-        self.status = self.get_status()
+        self.full_status = self.get_status()
+        self.simplified_eta = self.get_eta()
 
     def get_status(self):
         if self.percent_progress == UITorrentStatusEnum.UI_TORRENT_COMPLETED_DOWNLOAD:
-            return "Finished"
-        return
+            return "Completed"
+        elif self.status & UITorrentStatusEnum.UI_TORRENT_STARTED:
+            return "Started"
+        elif self.status & UITorrentStatusEnum.UI_TORRENT_PAUSED:
+            return "Paused"
+        elif self.status & UITorrentStatusEnum.UI_TORRENT_ERROR:
+            return "Error"
+        else:
+            return "WTF! {0} unknown error code".format(self.status)
+
+    def get_eta(self):
+        if self.fullstatus == "Started":
+            return eta_seconds_to_datetime(self.eta)
+        else:
+            return "N\A"
+
+
+def eta_seconds_to_datetime(eta):
+    return datetime.timedelta(seconds=eta)
+
+
+def bytes_converter(num, size_or_speed):
+    if size_or_speed == 'speed':
+        ret_string = "\s"
+    elif size_or_speed == 'size':
+        ret_string = ""
+
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s%s" % (num, x, ret_string)
+        num /= 1024.0
