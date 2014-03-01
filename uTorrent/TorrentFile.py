@@ -1,4 +1,5 @@
-#TODO: CHANGE EVERYTHING!!
+#usage - UITorrentEnum.UI_TORRENT_HASH
+#TODO: creae a better enum!
 
 
 class UITorrentEnum:
@@ -32,6 +33,7 @@ class UITorrentStatusEnum:
     UI_TORRENT_PAUSED = 32
     UI_TORRENT_QUEUED = 64
     UI_TORRENT_LOADED = 128
+    UI_TORRENT_COMPLETED_DOWNLOAD = 1000
 
 
 class TorrentFile(object):
@@ -59,6 +61,6 @@ class TorrentFile(object):
         self.status = self.get_status()
 
     def get_status(self):
-        if self.percent_progress / 10 == 100:
+        if self.percent_progress == UITorrentStatusEnum.UI_TORRENT_COMPLETED_DOWNLOAD:
             return "Finished"
         return
