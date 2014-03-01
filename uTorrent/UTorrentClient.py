@@ -46,6 +46,10 @@ class UTorrentClient(object):
         params += kwargs.items()
         return self._action(params)
 
+    def add_url(self, url):
+        params = [('action', 'add-url'), ('s', url)]
+        return self._action(params)
+
     def start(self, *hashes):
         params = [('action', 'start'), ]
         for hash in hashes:
@@ -92,19 +96,6 @@ class UTorrentClient(object):
             params.append(('f', str(file_index)))
 
         return self._action(params)
-
-    # def addfile(self, filename, filepath=None, bytes=None):
-        # params = [('action', 'add-file')]
-
-        # form = MultiPartForm()
-        # if filepath is not None:
-            # file_handler = open(filepath,'rb')
-        # else:
-            # file_handler = StringIO.StringIO(bytes)
-
-        # form.add_file('torrent_file', filename.encode('utf-8'), file_handler)
-
-        # return self._action(params, str(form), form.get_content_type())
 
     def _action(self, params, body=None, content_type=None):
         #about token, see https://github.com/bittorrent/webui/wiki/TokenSystem
