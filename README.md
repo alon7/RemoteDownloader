@@ -24,3 +24,5 @@ TODO
 -   tracker scrappers
 -   subtitles finder
 -   remote download API
+-   logging
+-   configurations file
