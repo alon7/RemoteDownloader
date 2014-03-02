@@ -1,5 +1,5 @@
-#usage - UITorrentEnum.UI_TORRENT_HASH
 #TODO: creae a better enum!
+
 import datetime
 
 
