@@ -1,4 +1,4 @@
-**NOTE**: alpha version
+**NOTE**: alpha version - only the utorrent webui is working now
 
 uTorrent.Py is a Python API for interacting with uTorrent via the WebUI
 
