@@ -4,20 +4,22 @@ import re
 import urllib
 from subtitles.urlHandler import URLHandler
 import ConfigParser
-import io
+from abc import abstractmethod
 
 # TODO: unzip subtitles zip files
 
 
-class SubtitleCoIl():
 
-    CONFIG = ConfigParser.RawConfigParser()
-    CONFIG.readfp(open('..\configuration\subtitlesConfig.cfg'))
+
+
+class Subtitle(object):
 
     BASE_URL = "http://www.subtitle.co.il"
 
     def __init__(self):
         self.urlHandler = URLHandler()
+        self.configuration = ConfigParser.RawConfigParser()
+        self.configuration.readfp(open('..\configuration\subtitlesConfig.cfg'))
 
     def get_subtitle_list(self, item):
         if item["tvshow"]:
@@ -108,6 +110,25 @@ class SubtitleCoIl():
 
         return sorted(ret, key=lambda x: (x['lang_index'], x['sync'], x['rating']), reverse=True)
 
+    def download(self, id, zip_filename):
+        query = {"id": id}
+        url = self.BASE_URL + "/downloadsubtitle.php?" + urllib.urlencode(query)
+        f = self.urlHandler.request(url)
+
+        with open(zip_filename, "wb") as subFile:
+            subFile.write(f)
+        subFile.close()
+
+    @abstractmethod
+    def _is_logged_in(self, url):
+        pass
+
+    @abstractmethod
+    def login(self):
+        pass
+
+
+"""
     # def _build_tvshow_subtitle_list(self, search_results, item):
     #     ret = []
     #     total_downloads = 0
@@ -206,33 +227,4 @@ class SubtitleCoIl():
     #                      'hearing_imp': 0
     #                     })
     #     return ret, total_downloads
-
-    def download(self, id, zip_filename):
-        query = {"id": id}
-        url = self.BASE_URL + "/downloadsubtitle.php?" + urllib.urlencode(query)
-        f = self.urlHandler.request(url)
-
-        with open(zip_filename, "wb") as subFile:
-            subFile.write(f)
-        subFile.close()
-
-    def _is_logged_in(self, url):
-        content = self.urlHandler.request(url)
-        if content is not None and re.search(r'friends\.php', content):  #  check if logged in
-            return content
-        elif self.login():
-            return self.urlHandler.request(url)
-        else:
-            return None
-
-    def login(self):
-        #  TODO: get data from configuration file!
-        email = self.CONFIG.get("subtitlescoil", "email")
-        password = self.CONFIG.get("subtitlescoil","password")
-        query = {'email': email, 'password': password, 'Login': 'התחבר'}
-        content = self.urlHandler.request(self.BASE_URL + "/login.php", query)
-        if re.search(r'<form action="/login\.php"', content):
-            return None
-        else:
-            self.urlHandler.save_cookie()
-            return True
+    """
