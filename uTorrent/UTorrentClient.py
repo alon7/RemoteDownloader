@@ -48,6 +48,7 @@ class UTorrentClient(object):
         return self._action(params)
 
     def add_url(self, url):
+        #can recieve magnet or normal .torrent link
         params = [('action', 'add-url'), ('s', url)]
         return self._action(params)
 
@@ -99,7 +100,6 @@ class UTorrentClient(object):
         return self._action(params)
 
     def _action(self, params, body=None, content_type=None):
-        #about token, see https://github.com/bittorrent/webui/wiki/TokenSystem
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
 
