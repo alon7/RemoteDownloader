@@ -4,120 +4,46 @@ import re
 import urllib
 from subtitles.urlHandler import URLHandler
 import ConfigParser
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 
 # TODO: unzip subtitles zip files
 
 
-
-
-
 class Subtitle(object):
+    __metaclass__ = ABCMeta
 
-    BASE_URL = "http://www.subtitle.co.il"
-
-    def __init__(self):
+    def __init__(self, base_url):
+        super(Subtitle, self).__init__()
+        self.base_url = base_url
         self.urlHandler = URLHandler()
         self.configuration = ConfigParser.RawConfigParser()
         self.configuration.readfp(open('..\configuration\subtitlesConfig.cfg'))
 
+    @abstractmethod
     def get_subtitle_list(self, item):
-        if item["tvshow"]:
-            search_results = self._search_tvshow(item)
-            results = self._build_tvshow_subtitle_list(search_results, item)
-        else:
-            search_results = self._search_movie(item)
-            results = self._build_movie_subtitle_list(search_results, item)
-
-        return results
+        pass
 
     # return list of tv-series from the site`s search
+    @abstractmethod
     def _search_tvshow(self, item):
-        search_string = re.split(r'\s\(\w+\)$', item["tvshow"])[0]
-
-        results = None
-
-        if not results:
-            query = {"q": search_string.lower(), "cs": "series"}
-
-            search_result = self.urlHandler.request(self.BASE_URL + "/browse.php?" + urllib.urlencode(query))
-            if search_result is None:
-                return results  # return empty set
-
-            urls = re.findall(
-                u'<a href="viewseries\.php\?id=(\d+)[^"]+" itemprop="url">[^<]+</a></div><div style="direction:ltr;" class="smtext">([^<]+)</div>',
-                search_result)
-
-            results = self._filter_urls(urls, search_string, item)
-        else:
-            results = eval(results)
-
-        return results
+        pass
 
     # return list of movie from the site`s search
+    @abstractmethod
     def _search_movie(self, item):
-        results = []
-        search_string = item["title"]
-        query = {"q": search_string.lower(), "cs": "movies"}
-        if item["year"]:
-            query["fy"] = int(item["year"]) - 1
-            query["uy"] = int(item["year"]) + 1
+        pass
 
-        search_result = self.urlHandler.request(self.BASE_URL + "/browse.php?" + urllib.urlencode(query))
-        if search_result is None:
-            return results  # return empty set
-
-        urls = re.findall(
-            u'<a href="view\.php\?id=(\d+)[^"]+" itemprop="url">[^<]+</a></div><div style="direction:ltr;" class="smtext">([^<]+)</div><span class="smtext">(\d{4})</span>',
-            search_result)
-
-        results = self._filter_urls(urls, search_string, item)
-        return results
-
+    @abstractmethod
     def _filter_urls(self, urls, search_string, item):
-        filtered = []
-        search_string = search_string.lower()
+        pass
 
-        if not item["tvshow"]:
-            for (id, eng_name, year) in urls:
-                if search_string.startswith(eng_name.lower()) and \
-                        (item["year"] == '' or
-                                 year == '' or
-                                     (int(year) - 1) <= int(item["year"]) <= (int(year) + 1) or
-                                     (int(item["year"]) - 1) <= int(year) <= (int(item["year"]) + 1)):
-                    filtered.append({"name": eng_name, "id": id, "year": year})
-        else:
-            for (id, eng_name) in urls:
-                if search_string.startswith(eng_name.lower()):
-                    filtered.append({"name": eng_name, "id": id})
-
-        return filtered
-
+    @abstractmethod
     def _build_movie_subtitle_list(self, search_results, item):
-        ret = []
-        total_downloads = 0
-        for result in search_results:
-            url = self.BASE_URL + "/view.php?" + urllib.urlencode({"id": result["id"], "m": "subtitles"})
-            subtitle_page = self._is_logged_in(url)
-            x, i = self._retrive_subtitles(subtitle_page, item)
-            total_downloads += i
-            ret += x
+        pass
 
-        # Fix the rating
-        if total_downloads:
-            for it in ret:
-                it["rating"] = str(int(round(it["rating"] / float(total_downloads), 1) * 5))
-
-        return sorted(ret, key=lambda x: (x['lang_index'], x['sync'], x['rating']), reverse=True)
-
-    def download(self, id, zip_filename):
-        query = {"id": id}
-        url = self.BASE_URL + "/downloadsubtitle.php?" + urllib.urlencode(query)
-        f = self.urlHandler.request(url)
-
-        with open(zip_filename, "wb") as subFile:
-            subFile.write(f)
-        subFile.close()
+    @abstractmethod
+    def download_subtitle(self, id, zip_filename):
+        pass
 
     @abstractmethod
     def _is_logged_in(self, url):
