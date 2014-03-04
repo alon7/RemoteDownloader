@@ -8,7 +8,7 @@ Dependencies
 uTorrent.py and associated modules/tools were developed with:
 
 -   Python 2.7
--   uTorrent and utorrent webui
+-   uTorrent and uTorrent webui
 	
 
 
@@ -22,7 +22,8 @@ TODO
 	-   rating
 	-   more
 -   tracker scrappers
--   subtitles finder
+-   subtitles scrappers
 -   remote download API
 -   logging
 -   configurations file
+-   fix conventions!
