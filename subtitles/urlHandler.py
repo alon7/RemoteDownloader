@@ -1,9 +1,12 @@
 import os
 import urllib
 import urllib2
+import urlparse
 import zlib
 import cookielib
 
+
+# TODO: fix request method
 
 class URLHandler():
     def __init__(self):
@@ -20,7 +23,10 @@ class URLHandler():
                                   ('User-Agent',
                                    'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0')]
 
-    def request(self, url, data=None, decode_zlib=True, ajax=False, referer=None, cookie=None):
+    def request(self, domain, url, data=None, decode_zlib=True, ajax=False, referer=None, cookie=None):
+
+        uri = urlparse.urljoin(domain, url)
+
         if data is not None:
             data = urllib.urlencode(data)
         if ajax:
@@ -32,7 +38,7 @@ class URLHandler():
 
         content = None
         try:
-            response = self.opener.open(url, data)
+            response = self.opener.open(uri, data)
             if response.code != 200:
                 content = None
             else:

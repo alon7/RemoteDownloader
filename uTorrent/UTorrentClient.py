@@ -7,6 +7,7 @@ import re
 import json
 
 # TODO: fix the url /gui/ thingy
+# TODO: Use subtitles/urlHandler class here!
 
 class UTorrentClient(object):
     def __init__(self, base_url='http://localhost.:8080', username='admin', password='admin'):
