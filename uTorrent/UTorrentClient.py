@@ -6,10 +6,10 @@ import cookielib
 import re
 import json
 
-# TODO: fix the url /gui/ thingy
-# TODO: Use subtitles/urlHandler class here!
 
 class UTorrentClient(object):
+    TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
+
     def __init__(self, base_url='http://localhost.:8080', username='admin', password='admin'):
         self.base_url = base_url
         self.username = username
@@ -39,8 +39,7 @@ class UTorrentClient(object):
     def _get_token(self):
         url = urlparse.urljoin(self.base_url, 'gui/token.html')
         response = self.opener.open(url)
-        token_re = "<div id='token' style='display:none;'>([^<>]+)</div>"
-        match = re.search(token_re, response.read())
+        match = re.search(UTorrentClient.TOKEN_REGEX, response.read())
         return match.group(1)
 
     def list(self, **kwargs):
