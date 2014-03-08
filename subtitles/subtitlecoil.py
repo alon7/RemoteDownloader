@@ -3,7 +3,6 @@
 import subtitles.subtitle
 import Utils
 from itertools import groupby
-import time
 import content
 
 
@@ -121,9 +120,9 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
         subFile.close()
 
     def _is_logged_in(self, url):
-        content = self.urlHandler.request(self.domain, url)
-        if content is not None and Utils.getregexresults(SUBTITLE_REGEX.SUCCESSFUL_LOGIN, content):
-            return content
+        data = self.urlHandler.request(self.domain, url)
+        if data is not None and Utils.getregexresults(SUBTITLE_REGEX.SUCCESSFUL_LOGIN, content):
+            return data
         elif self.login():
             return self.urlHandler.request(self.domain, url)
         else:
@@ -139,12 +138,3 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
         else:
             self.urlHandler.save_cookie()
             return True
-
-
-if __name__ == "__main__":
-    c = content.Content("Breaking Bad", "series", season="5", episodeNumber="5")
-    s = SubtitleCoIl()
-    r = s.findSubtitles(c)
-    print r[0][2]['version'][0]
-    s.download_subtitle(r[0][2]['version'][0]['VerCode'], "noWay.zip")
-    print 4
