@@ -97,13 +97,13 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
                             seasoncode = season['SeasonCode']
                             seasonnum = season['SeasonNum']
 
-                            if seasonnum == contentToDownload.season:
+                            if seasonnum == contentToDownload.season or contentToDownload.wholeSeriesFlag:
                                 total_episodes = self.getEpisodesList(seriescode, seasoncode)
                                 for episode in total_episodes:
                                     #Formatted version of the episode number. ie. S03E14...
                                     formated_episode = 'S%sE%s' % (seasonnum.rjust(2, '0'), episode['EpisodeNum'].rjust(2, '0'))
                                     #Insert the episode to the list
-                                    if episode['EpisodeNum'] == contentToDownload.episodeNumber or contentToDownload.wholeSeasonFlag:
+                                    if episode['EpisodeNum'] == contentToDownload.episodeNumber or contentToDownload.wholeSeasonFlag or contentToDownload.wholeSeriesFlag:
                                         episodeVersions = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                                                                   SUBTITLE_PAGES.SERIES_EPISODE % (seriescode, seasoncode, episode['EpisodeCode']))
                                         all_vers = SubtitleCoIl.getVersionsList(episodeVersions)
@@ -141,8 +141,10 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
             return True
 
 
-#if __name__ == "__main__":
-    # Check
-    #c = content.Content("Breaking Bad", "series", season="4", episodeNumber="4")
-    #s = SubtitleCoIl()
-    #r = s.findSubtitles(c)
+if __name__ == "__main__":
+    c = content.Content("Breaking Bad", "series", season="5", episodeNumber="5")
+    s = SubtitleCoIl()
+    r = s.findSubtitles(c)
+    print r[0][2]['version'][0]
+    s.download_subtitle(r[0][2]['version'][0]['VerCode'], "noWay.zip")
+    print 4

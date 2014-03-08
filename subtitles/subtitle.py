@@ -15,7 +15,7 @@ class Subtitle(object):
         self.domain = domainName
         self.urlHandler = URLHandler()
         self.configuration = ConfigParser.RawConfigParser()
-        self.configuration.readfp(open(r"C:\Users\Public\Documents\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
+        self.configuration.readfp(open(r"C:\Users\Public\Documents\utorrent\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
 
     #maybe should be implemented here
     @abstractmethod
