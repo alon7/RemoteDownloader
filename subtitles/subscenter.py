@@ -27,7 +27,10 @@ class SUBSCENTER_REGEX:
         '(?P<Type>movie|series)\/(?P<Code>[A-Za-z0-9\-]*?)\/\">' \
         '(?P<MovieName>[^>]*?)</a>'
     SERIES_VAR = r'var episodes_group = (.*?}}})'
-    LOGIN_VALIDATION = r"name='csrfmiddlewaretoken' value='(.*?)'"
+    SEARCH_RESULT_SERIES_REGEX =    "var movie_id = '4068';  \
+                                    var movie_slug = 'breaking-bad';\
+                                    var link_type = 'track series';"
+
 
 
 def getJson(rawJson):
