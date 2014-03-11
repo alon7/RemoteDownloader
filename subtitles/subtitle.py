@@ -17,15 +17,8 @@ class Subtitle(object):
         self.configuration = ConfigParser.RawConfigParser()
         self.configuration.readfp(open(r"C:\Users\Public\Documents\utorrent\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
 
-    #maybe should be implemented here
-    @abstractmethod
-    def download_subtitle(self, id, filename):
-        pass
 
-    @abstractmethod
-    def _is_logged_in(self, url):
-        pass
-
-    @abstractmethod
-    def login(self):
-        pass
+    #maybe Should be implemented here!
+    #@abstractmethod
+    #def download_subtitle(self, id, filename):
+        #pass

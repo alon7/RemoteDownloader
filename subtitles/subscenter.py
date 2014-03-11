@@ -6,8 +6,8 @@ import Utils
 
 
 class SUBSCENTER_LANGUAGES:
-    ENGLISH = 'en'
-    HEBREW = 'he'
+    ENGLISH = u'en'
+    HEBREW = u'he'
 
 
 class SUBSCENTER_PAGES:
@@ -30,19 +30,52 @@ class SUBSCENTER_REGEX:
     LOGIN_VALIDATION = r"name='csrfmiddlewaretoken' value='(.*?)'"
 
 
-def getJson(content):
+def getJson(rawJson):
     def asciirepl(match):
         return '\\u00' + match.group()[2:]
 
     p = re.compile(r'\\x(\w{2})')
-    content = p.sub(asciirepl, content)
-    return json.loads(content)
+    rawJson = p.sub(asciirepl, rawJson)
+    return json.loads(rawJson)
 
 
 class Subcenter(subtitles.subtitle.Subtitle):
+    BLACK_LIST_QUALITIES = [u'ALL']
+
     def __init__(self):
         super(self.__class__, self).__init__(SUBSCENTER_PAGES.DOMAIN)
         self.configuration_name = "subcenter"
+
+    @staticmethod
+    def getVersionsList(versionsJson):
+        """
+            This function will get the versions page of the movie/series and
+            return a tuple of vesrions summary and a formatted dictionary where
+            each key is the version_sum and the values are movie_code,
+            version_code and downloads count.
+        """
+        allVersions = {}
+
+        jsonedMoviePageDict = getJson(versionsJson)
+        currentLanguageProviders = jsonedMoviePageDict.get(SUBSCENTER_LANGUAGES.HEBREW)
+
+        totalQualities = []
+
+        if currentLanguageProviders:
+            for qualities in currentLanguageProviders.values():
+                for quality, versions in qualities.iteritems():
+                    if quality not in Subcenter.BLACK_LIST_QUALITIES and quality not in totalQualities:
+                        totalQualities.append(quality)
+
+                        for version in versions.values():
+                            verSum = version['subtitle_version']
+
+                            if not allVersions.get(verSum):
+                                allVersions[verSum] = {
+                                    "movie_code": version['id'],
+                                    "version_code": version['key']}
+
+        return allVersions
 
     @staticmethod
     def getEpisodesList(series_area_content):
@@ -57,75 +90,24 @@ class Subcenter(subtitles.subtitle.Subtitle):
         for season in total_seasons:
             total_episodes = jsoned_series_page_dict[season].keys()
             for episode in total_episodes:
-                all_episodes.append({   'season_id': jsoned_series_page_dict[season][episode]['season_id'],
-                                        'episode_id': jsoned_series_page_dict[season][episode]['episode_id']})
+                all_episodes.append({'season_id': jsoned_series_page_dict[season][episode]['season_id'],
+                                     'episode_id': jsoned_series_page_dict[season][episode]['episode_id']})
         return all_episodes
 
-    @staticmethod
-    def getVersionsList(versions_json):
-        """
-            This function will get the versions page of the movie/series and
-            return a tuple of vesrions summary and a formatted dictionary where
-            each key is the version_sum and the values are movie_code,
-            version_code and downloads count.
-        """
-
-        # A dictionary where the keys are the version_sum, and the values are
-        # dicts of movie_code, version_code and downloads.
-        all_versions = {}
-        ver_sum = ''
-
-        jsoned_movie_page_dict = getJson(versions_json)
-        current_language_providers = \
-            jsoned_movie_page_dict[SUBSCENTER_PAGES.LANGUAGE]
-
-        total_qualities = []
-
-        # Extract the qualities from each provider.
-        for qualities in current_language_providers.values():
-            for quality, versions in qualities.iteritems():
-                # Insert to the VerSum if not generic quality (ALL), or
-                # alreadt in the list.
-                if quality != 'ALL' and not quality in total_qualities:
-                    total_qualities.append(quality)
-
-                for version in versions.values():
-                    # Use the version as version sum.
-                    version_sum = version['subtitle_version']
-                    downloads = int(version['downloaded'])
-
-                    version_in_dict = all_versions.get(version_sum)
-                    # If not in the dict, or the one in the dict has less
-                    # downloads, put the new one in the dict.
-                    if not version_in_dict or \
-                                    version_in_dict['downloads'] <= downloads:
-                        all_versions[version_sum] = {
-                            "movie_code": version['id'],
-                            "version_code": version['key'],
-                            'downloads': downloads
-                        }
-
-        ver_sum = ' / '.join(total_qualities)
-
-        return (ver_sum, all_versions)
-
-    def _getMovieSubStageForMovie(self, movie_name, movie_code):
-        versions_json = self.urlHandler.request(
+    def _getMovieSubStageForMovie(self, movieName, movieCode):
+        versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
-            SUBSCENTER_PAGES.MOVIE_JSON % movie_code)
+            SUBSCENTER_PAGES.MOVIE_JSON % movieCode)
 
-        (ver_sum, all_versions) = \
-            self.getVersionsList(versions_json)
+        all_versions = self.getVersionsList(versionsJson)
 
         return (
-            movie_name,
-            movie_code,
-            ver_sum,
-            # Add special info.
-            {'type': 'movie', 'all_versions': all_versions})
+            movieName,
+            movieCode,
+            'movie',
+            all_versions)
 
-
-    def _getMovieSubStagesForSeries(self, cls, series_name, movie_code):
+    def _getMovieSubStagesForSeries(self, series_name, movie_code):
         series_page = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
             SUBSCENTER_PAGES.SERIES % movie_code)
@@ -152,49 +134,45 @@ class Subcenter(subtitles.subtitle.Subtitle):
             fotmatted_episode = 'S%sE%s' % \
                                 (season_id.rjust(2, '0'), episode_id.rjust(2, '0'))
             yield (
-                cls.PROVIDER_NAME,
                 '%s %s' % (series_name, fotmatted_episode),
                 '%s/%s/%s' % (movie_code, season_id, episode_id),
                 default_versum,
                 {'type': 'series'})
 
     def findSubtitles(self, contentToDownload):
-        moviename = contentToDownload.title
-        _movie_sub_stages = []
+        movieNameFromContent = contentToDownload.title
+        searchResults = []
 
-        result_page = self.urlHandler.request(
+        resultsPage = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
-            SUBSCENTER_PAGES.SEARCH % moviename.replace(' ', '+'))
+            SUBSCENTER_PAGES.SEARCH % movieNameFromContent.replace(' ', '+'))
 
-        movies_info = Utils.getregexresults(
-            SUBSCENTER_REGEX.SEARCH_RESULTS_PARSER, result_page, True)
+        moviesInfo = Utils.getregexresults(
+            SUBSCENTER_REGEX.SEARCH_RESULTS_PARSER, resultsPage, True)
 
-        for movie_info in movies_info:
-            movie_code = movie_info['Code']
-            movie_type = movie_info['Type']
-            movie_name = movie_info['MovieName']
+        for movieInfo in moviesInfo:
+            movieCode = movieInfo['Code']
+            movieType = movieInfo['Type']
+            movieName = movieInfo['MovieName']
 
             try:
-                # Left side is the hebrew name, the right is english.
-                movie_name = movie_name.split(' / ')[1]
-            except:
-                # If failed, keep the original name.
-                movie_name = movie_info['MovieName']
+                movieNameInEnglish = movieName.split(' / ')[1]
+            except ValueError:
+                movieNameInEnglish = movieName
 
-            if movie_type == 'movie' == contentToDownload.movieOrSeries:
-                _movie_sub_stages.append(self._getMovieSubStageForMovie(movie_name, movie_code))
+            if movieType == 'movie' == contentToDownload.movieOrSeries:
+                searchResults.append(self._getMovieSubStageForMovie(movieNameInEnglish, movieCode))
 
-            elif movie_type == 'series' == contentToDownload.movieOrSeries:
-                for stage in self._getMovieSubStagesForSeries(movie_name, movie_code): ###
-                    _movie_sub_stages.append(stage)
+            elif movieType == 'series' == contentToDownload.movieOrSeries:
+                for stage in self._getMovieSubStagesForSeries(movieNameInEnglish, movieCode):
+                    searchResults.append(stage)
 
-        return _movie_sub_stages
+        return searchResults
 
-    def findVersionSubStageList(self, cls, movie_sub_stage):
+    def findVersionSubStageList(self, movie_sub_stage):
 
         # A dictionary where keys are the version_sum and the values are dicts
         # with movie_code and version_code.
-        all_versions = {}
 
         # If it's a movie, the results are already inside the extra param.
         if movie_sub_stage.extra['type'] == 'movie':
@@ -212,35 +190,29 @@ class Subcenter(subtitles.subtitle.Subtitle):
         version_sub_stages = []
         for version_sum, item in all_versions.iteritems():
             version_sub_stages.append(
-
-                    cls.PROVIDER_NAME,
-                    version_sum,
-                    item['version_code'],
-                    item['movie_code'])
+                version_sum,
+                item['version_code'],
+                item['movie_code'])
 
         return version_sub_stages
 
-    def download_subtitle(self, version_sub_stage, filename):
+    def download_subtitle(self, version_sum, version_code, movie_code, filename):
         download_page = SUBSCENTER_PAGES.DOWN_PAGE % (
-        SUBSCENTER_PAGES.LANGUAGE,
-        version_sub_stage.movie_code,
-        # Replace spaces with their code
-        version_sub_stage.version_sum.replace(' ', '%20'),
-        version_sub_stage.version_code)
+            SUBSCENTER_LANGUAGES.HEBREW,
+            movie_code,
+            # Replace spaces with their code
+            version_sum.replace(' ', '%20'),
+            version_code)
 
         f = self.urlHandler.request(self.domain, download_page)
         with open(filename, "wb") as subFile:
             subFile.write(f)
         subFile.close()
 
-    def _is_logged_in(self, url):
-        pass
-
-    def login(self):
-        pass
 
 if __name__ == "__main__":
-    c = content.Content("12 years a slave", "movie")
+    c = content.Content("Breaking Bad", "series")
     sc = Subcenter()
-    sc.findSubtitles(c)
+    g = sc.findSubtitles(c)
+    #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")
     print 4
