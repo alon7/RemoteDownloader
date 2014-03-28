@@ -1,8 +1,8 @@
-import subtitles.subtitle
 import json
 import re
 import content
-import Utils
+from subtitles.subtitle import Subtitle
+from utils import Utils
 
 
 class SUBSCENTER_LANGUAGES:
@@ -23,14 +23,10 @@ class SUBSCENTER_PAGES:
 
 class SUBSCENTER_REGEX:
     SEARCH_RESULTS_PARSER = \
-        r'\<a href\=\"http\:\/\/subscenter.cinemast.com\/he\/subtitle\/' \
+        r'\<a href\=\"http\:\/\/(subscenter|www).cinemast.com\/he\/(subtitle|cinemast)\/' \
         '(?P<Type>movie|series)\/(?P<Code>[A-Za-z0-9\-]*?)\/\">' \
         '(?P<MovieName>[^>]*?)</a>'
     SERIES_VAR = r'var episodes_group = (.*?}}})'
-    SEARCH_RESULT_SERIES_REGEX =    "var movie_id = '4068';  \
-                                    var movie_slug = 'breaking-bad';\
-                                    var link_type = 'track series';"
-
 
 
 def getJson(rawJson):
@@ -42,7 +38,7 @@ def getJson(rawJson):
     return json.loads(rawJson)
 
 
-class Subcenter(subtitles.subtitle.Subtitle):
+class Subcenter(Subtitle):
     BLACK_LIST_QUALITIES = [u'ALL']
 
     def __init__(self):
@@ -54,10 +50,10 @@ class Subcenter(subtitles.subtitle.Subtitle):
         """
             This function will get the versions page of the movie/series and
             return a tuple of vesrions summary and a formatted dictionary where
-            each key is the version_sum and the values are movie_code,
-            version_code and downloads count.
+            each key is the versionSum and the values are movieCode,
+            versionCode and downloads count.
         """
-        allVersions = {}
+        allVersions = []
 
         jsonedMoviePageDict = getJson(versionsJson)
         currentLanguageProviders = jsonedMoviePageDict.get(SUBSCENTER_LANGUAGES.HEBREW)
@@ -72,83 +68,86 @@ class Subcenter(subtitles.subtitle.Subtitle):
 
                         for version in versions.values():
                             verSum = version['subtitle_version']
-
-                            if not allVersions.get(verSum):
-                                allVersions[verSum] = {
-                                    "movie_code": version['id'],
-                                    "version_code": version['key']}
+                            allVersions.append({
+                                "verSum": verSum,
+                                "movieCode": version['id'],
+                                "VerCode": version['key']})
 
         return allVersions
 
     @staticmethod
-    def getEpisodesList(series_area_content):
+    def getEpisodesList(seriesAreaContent):
         """
             This function will get the series page, and return all the episodes
-            inside this page return value will be List<season_id, episode_id>.
+            inside this page return value will be List<seasonId, episodeId>.
         """
-        all_episodes = []
-        jsoned_series_page_dict = getJson(series_area_content[0])
-        total_seasons = jsoned_series_page_dict.keys()
+        allEpisodes = []
+        jsonedSeriesPageDict = getJson(seriesAreaContent[0])
+        totalSeasons = jsonedSeriesPageDict.keys()
 
-        for season in total_seasons:
-            total_episodes = jsoned_series_page_dict[season].keys()
-            for episode in total_episodes:
-                all_episodes.append({'season_id': jsoned_series_page_dict[season][episode]['season_id'],
-                                     'episode_id': jsoned_series_page_dict[season][episode]['episode_id']})
-        return all_episodes
+        for season in totalSeasons:
+            totalEpisodes = jsonedSeriesPageDict[season].keys()
+            for episode in totalEpisodes:
+                allEpisodes.append({'seasonId': jsonedSeriesPageDict[season][episode]['season_id'],
+                                    'episodeId': jsonedSeriesPageDict[season][episode]['episode_id']})
+        return allEpisodes
 
-    def _getMovieSubStageForMovie(self, movieName, movieCode):
+    def getMovieVersions(self, movieName, movieCode):
         versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
             SUBSCENTER_PAGES.MOVIE_JSON % movieCode)
 
-        all_versions = self.getVersionsList(versionsJson)
+        allVersions = self.getVersionsList(versionsJson)
 
         return (
             movieName,
-            movieCode,
-            'movie',
-            all_versions)
+            allVersions)
 
-    def _getMovieSubStagesForSeries(self, series_name, movie_code):
-        series_page = self.urlHandler.request(
+    def getEpisodeVersions(self, episdoe):
+        seriesCode = episdoe[1]
+        versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
-            SUBSCENTER_PAGES.SERIES % movie_code)
-        series_area_content = Utils.getregexresults(
+            SUBSCENTER_PAGES.SERIES_JSON % tuple(seriesCode.split("/")))
+        allVersions = Subcenter.getVersionsList(versionsJson)
+        return allVersions
+
+    def getEpisodes(self, seriesName, movieCode):
+        seriesPage = self.urlHandler.request(
+            SUBSCENTER_PAGES.DOMAIN,
+            SUBSCENTER_PAGES.SERIES % movieCode)
+        seriesAreaContent = Utils.getregexresults(
             SUBSCENTER_REGEX.SERIES_VAR,
-            series_page)
-        all_episodes = \
-            Subcenter.getEpisodesList(series_area_content)
+            seriesPage)
+        allEpisodes = \
+            Subcenter.getEpisodesList(seriesAreaContent)
 
         # Default version summary for series (otherwise we'll have to
         # query all the avaliable episodes pages
-        default_versum = 'Sub types are not supported in this provider'
 
-        for episode in all_episodes:
+        for episode in allEpisodes:
             # json returns the ids as number, so conversion to str is
             # needed.
-            season_id = str(episode['season_id'])
-            episode_id = str(episode['episode_id'])
+            seasonId = str(episode['seasonId'])
+            episodeId = str(episode['episodeId'])
             # We put fomratted version of the episode in order to match
             # the file name format. for example:
             # The.Big.Bang.Theory.S05E16.720p.HDTV.X264-DIMENSION
             # The rjust function is used in order to create 2 digit
             # wide number.
             fotmatted_episode = 'S%sE%s' % \
-                                (season_id.rjust(2, '0'), episode_id.rjust(2, '0'))
+                                (seasonId.rjust(2, '0'), episodeId.rjust(2, '0'))
             yield (
-                '%s %s' % (series_name, fotmatted_episode),
-                '%s/%s/%s' % (movie_code, season_id, episode_id),
-                default_versum,
+                '%s %s' % (seriesName, fotmatted_episode),
+                '%s/%s/%s' % (movieCode, seasonId, episodeId),
                 {'type': 'series'})
 
     def findSubtitles(self, contentToDownload):
-        movieNameFromContent = contentToDownload.title
+        contentName = contentToDownload.title
         searchResults = []
 
         resultsPage = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
-            SUBSCENTER_PAGES.SEARCH % movieNameFromContent.replace(' ', '+'))
+            SUBSCENTER_PAGES.SEARCH % contentName.replace(' ', '+'))
 
         moviesInfo = Utils.getregexresults(
             SUBSCENTER_REGEX.SEARCH_RESULTS_PARSER, resultsPage, True)
@@ -164,57 +163,28 @@ class Subcenter(subtitles.subtitle.Subtitle):
                 movieNameInEnglish = movieName
 
             if movieType == 'movie' == contentToDownload.movieOrSeries:
-                searchResults.append(self._getMovieSubStageForMovie(movieNameInEnglish, movieCode))
+                searchResults.append(self.getMovieVersions(movieNameInEnglish, movieCode))
 
             elif movieType == 'series' == contentToDownload.movieOrSeries:
-                for stage in self._getMovieSubStagesForSeries(movieNameInEnglish, movieCode):
-                    searchResults.append(stage)
+                #TODO: choose only desired episodes
+                for episdoe in self.getEpisodes(movieNameInEnglish, movieCode):
+                    searchResults.append((movieNameInEnglish, self.getEpisodeVersions(episdoe)))
 
         return searchResults
 
-    def findVersionSubStageList(self, movie_sub_stage):
-
-        # A dictionary where keys are the version_sum and the values are dicts
-        # with movie_code and version_code.
-
-        # If it's a movie, the results are already inside the extra param.
-        if movie_sub_stage.extra['type'] == 'movie':
-            all_versions = movie_sub_stage.extra['all_versions']
-        # Else, on series, we still got work to do
-        else:
-            series_code = movie_sub_stage.movie_code
-
-            versions_json = self.urlHandler.request(
-                SUBSCENTER_PAGES.DOMAIN,
-                SUBSCENTER_PAGES.SERIES_JSON % tuple(series_code.split("/")))
-            (ver_sum, all_versions) = \
-                Subcenter.getVersionsList(versions_json)
-
-        version_sub_stages = []
-        for version_sum, item in all_versions.iteritems():
-            version_sub_stages.append(
-                version_sum,
-                item['version_code'],
-                item['movie_code'])
-
-        return version_sub_stages
-
-    def download_subtitle(self, version_sum, version_code, movie_code, filename):
-        download_page = SUBSCENTER_PAGES.DOWN_PAGE % (
+    def downloadSubtitle(self, versionSum, versionCode, movieCode, filename):
+        downloadPage = SUBSCENTER_PAGES.DOWN_PAGE % (
             SUBSCENTER_LANGUAGES.HEBREW,
-            movie_code,
+            movieCode,
             # Replace spaces with their code
-            version_sum.replace(' ', '%20'),
-            version_code)
+            versionSum.replace(' ', '%20'),
+            versionCode)
 
-        f = self.urlHandler.request(self.domain, download_page)
-        with open(filename, "wb") as subFile:
-            subFile.write(f)
-        subFile.close()
-
+        fileData = self.urlHandler.request(self.domain, downloadPage)
+        self.manageSubtileFile(fileData, "ShouldCreateABetterFileName.zip")
 
 if __name__ == "__main__":
-    c = content.Content("Breaking Bad", "series")
+    c = content.Content("breaking bad", "series")
     sc = Subcenter()
     g = sc.findSubtitles(c)
     #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import re
-import urllib
-from subtitles.urlHandler import URLHandler
 import ConfigParser
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
+
+from utils.urlHandler import URLHandler
 
 
 class Subtitle(object):
@@ -17,8 +16,9 @@ class Subtitle(object):
         self.configuration = ConfigParser.RawConfigParser()
         self.configuration.readfp(open(r"C:\Users\Public\Documents\utorrent\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
 
-
-    #maybe Should be implemented here!
-    #@abstractmethod
-    #def download_subtitle(self, id, filename):
-        #pass
+    @staticmethod
+    def manageSubtileFile(fileData, fileName):
+        #TODO: unzip files!
+        with open(fileName, "wb") as subFile:
+            subFile.write(fileData)
+        subFile.close()

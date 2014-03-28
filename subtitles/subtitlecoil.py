@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import subtitles.subtitle
-import Utils
+from subtitles.subtitle import Subtitle
+from utils import Utils
 from itertools import groupby
 import content
 
@@ -29,16 +28,16 @@ class SUBTITLE_REGEX:
     SUCCESSFUL_LOGIN = r'friends\.php'
 
 
-class SubtitleCoIl(subtitles.subtitle.Subtitle):
+class SubtitleCoIl(Subtitle):
     def __init__(self):
         super(self.__class__, self).__init__(SUBTITLE_PAGES.DOMAIN)
         self.configuration_name = "subtitlescoil"
 
-    @staticmethod  # check!
+    @staticmethod
     def isSeries(search_content):
         return bool(Utils.getregexresults(SUBTITLE_REGEX.TV_SERIES_RESULTS_PARSER, search_content))
 
-    @staticmethod  # check!
+    @staticmethod
     def getVersionsList(page_content):
         results = Utils.getregexresults(SUBTITLE_REGEX.SUBTITLE_LIST_PARSER, page_content, True)
         return results
@@ -57,22 +56,24 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
 
     def findSubtitles(self, contentToDownload):
         contentName = contentToDownload.title
-        self._is_logged_in(SUBTITLE_PAGES.DOMAIN + "/")  # REMOVE!
-        searchresult = self.urlHandler.request(
+        searchResults = []
+        self._is_logged_in(SUBTITLE_PAGES.DOMAIN + "/")  # move method call to constructor!
+
+        resulstPage = self.urlHandler.request(
             SUBTITLE_PAGES.DOMAIN,
             SUBTITLE_PAGES.SEARCH % contentName.replace(' ', '+'))
 
-        movie_results = list(   map(lambda r: {'content': r, 'type': 'movie'},
+        moviesInfo = list(   map(lambda r: {'content': r, 'type': 'movie'},
                                 Utils.getregexresults(SUBTITLE_REGEX.MOVIE_RESULTS_PARSER,
-                                searchresult, True)))
+                                resulstPage, True)))
 
         #If we got series in the result, extract it too
-        if SubtitleCoIl.isSeries(searchresult):
-            for series in Utils.getregexresults(SUBTITLE_REGEX.TV_SERIES_RESULTS_PARSER, searchresult, True):
-                movie_results.append({'content': series, 'type': 'series'})
+        if SubtitleCoIl.isSeries(resulstPage):
+            for series in Utils.getregexresults(SUBTITLE_REGEX.TV_SERIES_RESULTS_PARSER, resulstPage, True):
+                moviesInfo.append({'content': series, 'type': 'series'})
 
-        searchResults = []
-        for type, results in groupby(movie_results, lambda i: i['type']):
+
+        for type, results in groupby(moviesInfo, lambda i: i['type']):
             if 'movie' == contentToDownload.movieOrSeries == type:
                 for result in results:
                     moviecode = result['content']['MovieCode']
@@ -109,19 +110,16 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
                                         searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
                                                           {'series_code': seriescode, 'season_code': seasoncode, 'version': all_vers}))
 
-            return searchResults
+        return searchResults
 
     def download_subtitle(self, id, filename):
-        url = SUBTITLE_PAGES.DOWNLOAD % id
-        f = self.urlHandler.request(self.domain, url)
-
-        with open(filename, "wb") as subFile:
-            subFile.write(f)
-        subFile.close()
+        download_page = SUBTITLE_PAGES.DOWNLOAD % id
+        fileData = self.urlHandler.request(self.domain, download_page)
+        self.manageSubtileFile(fileData, "ShouldCreateABetterFileName.zip")
 
     def _is_logged_in(self, url):
         data = self.urlHandler.request(self.domain, url)
-        if data is not None and Utils.getregexresults(SUBTITLE_REGEX.SUCCESSFUL_LOGIN, content):
+        if data is not None and Utils.getregexresults(SUBTITLE_REGEX.SUCCESSFUL_LOGIN, data):
             return data
         elif self.login():
             return self.urlHandler.request(self.domain, url)
@@ -138,3 +136,10 @@ class SubtitleCoIl(subtitles.subtitle.Subtitle):
         else:
             self.urlHandler.save_cookie()
             return True
+
+if __name__ == "__main__":
+    c = content.Content("lost", "series", season="1", episodeNumber="1")
+    sc = SubtitleCoIl()
+    g = sc.findSubtitles(c)
+    #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")
+    print 4
