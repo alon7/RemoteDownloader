@@ -104,7 +104,7 @@ class Subcenter(Subtitle):
             allVersions)
 
     def getEpisodeVersions(self, episdoe):
-        seriesCode = episdoe[1]
+        seriesCode = episdoe.get('seriesCode')
         versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
             SUBSCENTER_PAGES.SERIES_JSON % tuple(seriesCode.split("/")))
@@ -136,10 +136,11 @@ class Subcenter(Subtitle):
             # wide number.
             fotmatted_episode = 'S%sE%s' % \
                                 (seasonId.rjust(2, '0'), episodeId.rjust(2, '0'))
-            yield (
-                '%s %s' % (seriesName, fotmatted_episode),
-                '%s/%s/%s' % (movieCode, seasonId, episodeId),
-                {'type': 'series'})
+            yield {'prettyName': '%s %s' % (seriesName, fotmatted_episode),
+                   'seriesCode': '%s/%s/%s' % (movieCode, seasonId, episodeId),
+                   'season': seasonId,
+                   'episode': episodeId,
+                   'type': 'series'}
 
     def findSubtitles(self, contentToDownload):
         contentName = contentToDownload.title
@@ -166,13 +167,13 @@ class Subcenter(Subtitle):
                 searchResults.append(self.getMovieVersions(movieNameInEnglish, movieCode))
 
             elif movieType == 'series' == contentToDownload.movieOrSeries:
-                #TODO: choose only desired episodes
-                for episdoe in self.getEpisodes(movieNameInEnglish, movieCode):
-                    searchResults.append((movieNameInEnglish, self.getEpisodeVersions(episdoe)))
+                for episode in self.getEpisodes(movieNameInEnglish, movieCode):
+                    if (episode.get('season') == contentToDownload.season and episode.get('episode') == contentToDownload.episodeNumber) or (episode.get('season') == contentToDownload.season and contentToDownload.wholeSeasonFlag) or contentToDownload.wholeSeriesFlag:
+                        searchResults.append((movieNameInEnglish, self.getEpisodeVersions(episode)))
 
         return searchResults
 
-    def downloadSubtitle(self, versionSum, versionCode, movieCode, filename):
+    def downloadSubtitle(self, versionSum, versionCode, movieCode, fileName):
         downloadPage = SUBSCENTER_PAGES.DOWN_PAGE % (
             SUBSCENTER_LANGUAGES.HEBREW,
             movieCode,
@@ -181,11 +182,10 @@ class Subcenter(Subtitle):
             versionCode)
 
         fileData = self.urlHandler.request(self.domain, downloadPage)
-        self.manageSubtileFile(fileData, "ShouldCreateABetterFileName.zip")
+        self.manageSubtileFile(fileData, fileName)
 
 if __name__ == "__main__":
-    c = content.Content("breaking bad", "series")
+    c = content.Content("breaking bad", "series", wholeSeriesFlag=True)
     sc = Subcenter()
     g = sc.findSubtitles(c)
-    #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")
     print 4

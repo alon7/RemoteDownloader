@@ -112,10 +112,10 @@ class SubtitleCoIl(Subtitle):
 
         return searchResults
 
-    def download_subtitle(self, id, filename):
+    def download_subtitle(self, id, fileName):
         download_page = SUBTITLE_PAGES.DOWNLOAD % id
         fileData = self.urlHandler.request(self.domain, download_page)
-        self.manageSubtileFile(fileData, "ShouldCreateABetterFileName.zip")
+        self.manageSubtileFile(fileData, fileName)
 
     def _is_logged_in(self, url):
         data = self.urlHandler.request(self.domain, url)
