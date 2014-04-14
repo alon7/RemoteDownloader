@@ -1,6 +1,6 @@
-from subtitles.subtitle import Subtitle
+import subtitles.subtitle
 
 
-class Torec(Subtitle):
+class Torec(subtitles.Subtitle):
     def __init__(self):
         pass

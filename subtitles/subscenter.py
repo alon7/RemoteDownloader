@@ -169,7 +169,13 @@ class Subcenter(Subtitle):
             elif movieType == 'series' == contentToDownload.movieOrSeries:
                 for episode in self.getEpisodes(movieNameInEnglish, movieCode):
                     if (episode.get('season') == contentToDownload.season and episode.get('episode') == contentToDownload.episodeNumber) or (episode.get('season') == contentToDownload.season and contentToDownload.wholeSeasonFlag) or contentToDownload.wholeSeriesFlag:
-                        searchResults.append((movieNameInEnglish, self.getEpisodeVersions(episode)))
+                        allVersions = self.getEpisodeVersions(episode)
+                        if None != contentToDownload.version:
+                            for versionDict in allVersions:
+                                if versionDict.get('verSum') == contentToDownload.version:
+                                    searchResults.append((movieNameInEnglish, versionDict))
+                        else:
+                            searchResults.append((movieNameInEnglish, allVersions))
 
         return searchResults
 
@@ -185,7 +191,7 @@ class Subcenter(Subtitle):
         self.manageSubtileFile(fileData, fileName)
 
 if __name__ == "__main__":
-    c = content.Content("breaking bad", "series", wholeSeriesFlag=True)
+    c = content.Content("game of thrones", "series", version=u'Game.of.Thrones.S04E01.Mini.480p.HDTV.x264-mSD', season="4", episodeNumber="1")
     sc = Subcenter()
     g = sc.findSubtitles(c)
     print 4

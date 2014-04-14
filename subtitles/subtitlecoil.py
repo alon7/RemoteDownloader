@@ -107,7 +107,13 @@ class SubtitleCoIl(Subtitle):
                                         episodeVersions = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                                                                   SUBTITLE_PAGES.SERIES_EPISODE % (seriescode, seasoncode, episode['EpisodeCode']))
                                         all_vers = SubtitleCoIl.getVersionsList(episodeVersions)
-                                        searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
+                                        if None != contentToDownload.version:
+                                            for versionDict in all_vers:
+                                                if contentToDownload.version == versionDict.get('VerSum'):
+                                                    searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
+                                                          {'series_code': seriescode, 'season_code': seasoncode, 'version': versionDict}))
+                                        else:
+                                            searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
                                                           {'series_code': seriescode, 'season_code': seasoncode, 'version': all_vers}))
 
         return searchResults
@@ -138,8 +144,9 @@ class SubtitleCoIl(Subtitle):
             return True
 
 if __name__ == "__main__":
-    c = content.Content("lost", "series", season="1", episodeNumber="1")
+    c = content.Content("game of thrones", "series", version='Game.of.Thrones.S04E01.Mini.720p.HDTV.x264-ITSat', season="4", episodeNumber="1")
     sc = SubtitleCoIl()
     g = sc.findSubtitles(c)
     #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")
     print 4
+    sc.download_subtitle('266212', 'Game.of.Thrones.S04E01.720p.HDTV.x264-KILLERS')

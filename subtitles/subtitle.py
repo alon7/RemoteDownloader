@@ -10,7 +10,6 @@ class Subtitle(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, domainName):
-        super(Subtitle, self).__init__()
         self.domain = domainName
         self.urlHandler = URLHandler()
         self.configuration = ConfigParser.RawConfigParser()
