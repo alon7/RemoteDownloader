@@ -6,7 +6,7 @@ from utils.urlHandler import URLHandler
 
 class THEPIRATEBAY_PAGES:
     DOMAIN = 'https://thepiratebay.se'
-    SEARCH = '/search/%s/%s/7/0'  # minimum seeders 1 should be dynamic!
+    SEARCH = '/search/%s/%s/7/0'
 
 
 class ThePirateBay(object):

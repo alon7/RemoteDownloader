@@ -7,7 +7,7 @@ from utils.urlHandler import URLHandler
 
 class PUBLICHD_PAGES:
     DOMAIN = 'https://publichd.se'
-    SEARCH = '/index.php?page=torrents&active=0&search=%s&order=5&by=2'  # minimum seeders 1 should be dynamic!
+    SEARCH = '/index.php?page=torrents&active=0&search=%s&order=5&by=2'
 
 
 
