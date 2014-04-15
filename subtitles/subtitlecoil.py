@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from subtitles.subtitle import Subtitle
+from subtitles.subtitlesite import SubtitleSite
 from utils import Utils
 from itertools import groupby
 import content
@@ -28,10 +28,11 @@ class SUBTITLE_REGEX:
     SUCCESSFUL_LOGIN = r'friends\.php'
 
 
-class SubtitleCoIl(Subtitle):
+class SubtitleCoIl(SubtitleSite):
     def __init__(self):
         super(self.__class__, self).__init__(SUBTITLE_PAGES.DOMAIN)
         self.configuration_name = "subtitlescoil"
+        self._is_logged_in(SUBTITLE_PAGES.DOMAIN + "/")
 
     @staticmethod
     def isSeries(search_content):
@@ -40,6 +41,11 @@ class SubtitleCoIl(Subtitle):
     @staticmethod
     def getVersionsList(page_content):
         results = Utils.getregexresults(SUBTITLE_REGEX.SUBTITLE_LIST_PARSER, page_content, True)
+        for result in results:
+            result['DownloadPage'] = SUBTITLE_PAGES.DOWNLOAD % result['VerCode']
+            result['Domain'] = SUBTITLE_PAGES.DOMAIN
+            result.pop('VerCode', None)
+            result.pop('Language', None)  #?
         return results
 
     def getSeasonsList(self, series_code):
@@ -57,7 +63,6 @@ class SubtitleCoIl(Subtitle):
     def findSubtitles(self, contentToDownload):
         contentName = contentToDownload.title
         searchResults = []
-        self._is_logged_in(SUBTITLE_PAGES.DOMAIN + "/")  # move method call to constructor!
 
         resulstPage = self.urlHandler.request(
             SUBTITLE_PAGES.DOMAIN,
@@ -83,9 +88,13 @@ class SubtitleCoIl(Subtitle):
                         SUBTITLE_PAGES.DOMAIN,
                         SUBTITLE_PAGES.MOVIE_SUBTITLES % moviecode)
                     all_vers = SubtitleCoIl.getVersionsList(page_content)
-
-                    #Append result to the subMovies List
-                    searchResults.append((moviename, moviecode, all_vers))
+                    if None != contentToDownload.versions:
+                        for versionDict in all_vers:
+                            if versionDict.get('VerSum') in contentToDownload.versions:
+                                searchResults.append(versionDict)
+                                break  # SHOULD BE REMOVED?
+                    else:
+                        searchResults.append(all_vers)
             elif 'series' == contentToDownload.movieOrSeries == type:
                 for result in results:
                     seriescode = result['content']['MovieCode']
@@ -100,21 +109,17 @@ class SubtitleCoIl(Subtitle):
                             if seasonnum == contentToDownload.season or contentToDownload.wholeSeriesFlag:
                                 total_episodes = self.getEpisodesList(seriescode, seasoncode)
                                 for episode in total_episodes:
-                                    #Formatted version of the episode number. ie. S03E14...
-                                    formated_episode = 'S%sE%s' % (seasonnum.rjust(2, '0'), episode['EpisodeNum'].rjust(2, '0'))
-                                    #Insert the episode to the list
                                     if episode['EpisodeNum'] == contentToDownload.episodeNumber or contentToDownload.wholeSeasonFlag or contentToDownload.wholeSeriesFlag:
                                         episodeVersions = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                                                                   SUBTITLE_PAGES.SERIES_EPISODE % (seriescode, seasoncode, episode['EpisodeCode']))
                                         all_vers = SubtitleCoIl.getVersionsList(episodeVersions)
-                                        if None != contentToDownload.version:
+                                        if [None] != contentToDownload.versions:
                                             for versionDict in all_vers:
-                                                if contentToDownload.version == versionDict.get('VerSum'):
-                                                    searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
-                                                          {'series_code': seriescode, 'season_code': seasoncode, 'version': versionDict}))
+                                                if versionDict.get('VerSum') in contentToDownload.versions:
+                                                    searchResults.append(versionDict)
+                                                    break  # SHOULD BE REMOVED?
                                         else:
-                                            searchResults.append(('%s %s' % (seriesname, formated_episode), episode['EpisodeCode'],
-                                                          {'series_code': seriescode, 'season_code': seasoncode, 'version': all_vers}))
+                                            searchResults.append(all_vers)
 
         return searchResults
 
@@ -142,11 +147,3 @@ class SubtitleCoIl(Subtitle):
         else:
             self.urlHandler.save_cookie()
             return True
-
-if __name__ == "__main__":
-    c = content.Content("game of thrones", "series", version='Game.of.Thrones.S04E01.Mini.720p.HDTV.x264-ITSat', season="4", episodeNumber="1")
-    sc = SubtitleCoIl()
-    g = sc.findSubtitles(c)
-    #sc.download_subtitle('12.Years.a.Slave.[2013].1080p.BluRay.AAC.x264-tomcat12', 'f1babe584f0d8509e99cc3e4a82f43cb', "267473", "NOWAY!!.zip")
-    print 4
-    sc.download_subtitle('266212', 'Game.of.Thrones.S04E01.720p.HDTV.x264-KILLERS')

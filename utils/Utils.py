@@ -11,3 +11,15 @@ def getregexresults(pattern, content, with_groups=False):
     else:
         results = re.findall(c_pattern, content)
     return list(results)
+
+
+def bytes_converter(num, size_or_speed):
+    if size_or_speed == 'speed':
+        ret_string = "\s"
+    elif size_or_speed == 'size':
+        ret_string = ""
+
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s%s" % (num, x, ret_string)
+        num /= 1024.0

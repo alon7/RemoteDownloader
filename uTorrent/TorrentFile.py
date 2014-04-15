@@ -1,7 +1,7 @@
 #TODO: creae a better enum!
 
 import datetime
-
+from  utils import Utils
 
 class UITorrentEnum:
     UI_TORRENT_HASH, \
@@ -42,13 +42,13 @@ class TorrentFile(object):
         self.hash = torrentjson[UITorrentEnum.UI_TORRENT_HASH]
         self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS]  # UITorrentStatusEnum!
         self.name = torrentjson[UITorrentEnum.UI_TORRENT_NAME]
-        self.size = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_SIZE], 'size')
+        self.size = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_SIZE], 'size')
         self.percent_progress = torrentjson[UITorrentEnum.UI_TORRENT_PERCENT_PROGRESS]
-        self.downloaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED], 'size')
-        self.uploaded = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOADED], 'size')
+        self.downloaded = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED], 'size')
+        self.uploaded = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOADED], 'size')
         self.ratio = torrentjson[UITorrentEnum.UI_TORRENT_RATIO] / 1000.0  # bad practice
-        self.upload_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOAD_SPEED], 'speed')
-        self.download_speed = bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOAD_SPEED], 'speed')
+        self.upload_speed = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_UPLOAD_SPEED], 'speed')
+        self.download_speed = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOAD_SPEED], 'speed')
         self.eta = torrentjson[UITorrentEnum.UI_TORRENT_ETA]
         self.label = torrentjson[UITorrentEnum.UI_TORRENT_LABEL]
         self.peers_connected = torrentjson[UITorrentEnum.UI_TORRENT_PEERS_CONNECTED]
@@ -83,15 +83,3 @@ class TorrentFile(object):
 
 def eta_seconds_to_datetime(eta):
     return datetime.timedelta(seconds=eta)
-
-
-def bytes_converter(num, size_or_speed):
-    if size_or_speed == 'speed':
-        ret_string = "\s"
-    elif size_or_speed == 'size':
-        ret_string = ""
-
-    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
-        if num < 1024.0:
-            return "%3.1f %s%s" % (num, x, ret_string)
-        num /= 1024.0

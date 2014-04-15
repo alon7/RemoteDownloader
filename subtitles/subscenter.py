@@ -1,7 +1,6 @@
 import json
 import re
-import content
-from subtitles.subtitle import Subtitle
+from subtitles.subtitlesite import SubtitleSite
 from utils import Utils
 
 
@@ -38,7 +37,7 @@ def getJson(rawJson):
     return json.loads(rawJson)
 
 
-class Subcenter(Subtitle):
+class Subcenter(SubtitleSite):
     BLACK_LIST_QUALITIES = [u'ALL']
 
     def __init__(self):
@@ -70,8 +69,11 @@ class Subcenter(Subtitle):
                             verSum = version['subtitle_version']
                             allVersions.append({
                                 "verSum": verSum,
-                                "movieCode": version['id'],
-                                "VerCode": version['key']})
+                                'Domain': SUBSCENTER_PAGES.DOMAIN,
+                                'DownloadPage': SUBSCENTER_PAGES.DOWN_PAGE % (SUBSCENTER_LANGUAGES.HEBREW,
+                                                                              version['id'],
+                                                                              verSum.replace(' ', '%20'),
+                                                                              version['key'])})
 
         return allVersions
 
@@ -92,16 +94,13 @@ class Subcenter(Subtitle):
                                     'episodeId': jsonedSeriesPageDict[season][episode]['episode_id']})
         return allEpisodes
 
-    def getMovieVersions(self, movieName, movieCode):
+    def getMovieVersions(self, movieCode):
         versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
             SUBSCENTER_PAGES.MOVIE_JSON % movieCode)
 
         allVersions = self.getVersionsList(versionsJson)
-
-        return (
-            movieName,
-            allVersions)
+        return allVersions
 
     def getEpisodeVersions(self, episdoe):
         seriesCode = episdoe.get('seriesCode')
@@ -121,19 +120,9 @@ class Subcenter(Subtitle):
         allEpisodes = \
             Subcenter.getEpisodesList(seriesAreaContent)
 
-        # Default version summary for series (otherwise we'll have to
-        # query all the avaliable episodes pages
-
         for episode in allEpisodes:
-            # json returns the ids as number, so conversion to str is
-            # needed.
             seasonId = str(episode['seasonId'])
             episodeId = str(episode['episodeId'])
-            # We put fomratted version of the episode in order to match
-            # the file name format. for example:
-            # The.Big.Bang.Theory.S05E16.720p.HDTV.X264-DIMENSION
-            # The rjust function is used in order to create 2 digit
-            # wide number.
             fotmatted_episode = 'S%sE%s' % \
                                 (seasonId.rjust(2, '0'), episodeId.rjust(2, '0'))
             yield {'prettyName': '%s %s' % (seriesName, fotmatted_episode),
@@ -164,16 +153,26 @@ class Subcenter(Subtitle):
                 movieNameInEnglish = movieName
 
             if movieType == 'movie' == contentToDownload.movieOrSeries:
-                searchResults.append(self.getMovieVersions(movieNameInEnglish, movieCode))
+                allVersions = self.getMovieVersions(movieNameInEnglish)
+                if [None] != contentToDownload.version:
+                    for versionDict in allVersions:
+                        if versionDict.get('VerSum') in contentToDownload.versions:
+                            searchResults.append(versionDict)
+                            break  # SHOULD BE REMOVED?
+                else:
+                    searchResults.append((movieNameInEnglish, allVersions))
 
             elif movieType == 'series' == contentToDownload.movieOrSeries:
                 for episode in self.getEpisodes(movieNameInEnglish, movieCode):
-                    if (episode.get('season') == contentToDownload.season and episode.get('episode') == contentToDownload.episodeNumber) or (episode.get('season') == contentToDownload.season and contentToDownload.wholeSeasonFlag) or contentToDownload.wholeSeriesFlag:
+                    if (episode.get('season') == contentToDownload.season and episode.get(
+                            'episode') == contentToDownload.episodeNumber) or (episode.get(
+                            'season') == contentToDownload.season and contentToDownload.wholeSeasonFlag) or contentToDownload.wholeSeriesFlag:
                         allVersions = self.getEpisodeVersions(episode)
-                        if None != contentToDownload.version:
+                        if [None] != contentToDownload.versions:
                             for versionDict in allVersions:
-                                if versionDict.get('verSum') == contentToDownload.version:
-                                    searchResults.append((movieNameInEnglish, versionDict))
+                                if versionDict.get('VerSum') in contentToDownload.versions:
+                                    searchResults.append(versionDict)
+                                    break  # SHOULD BE REMOVED?
                         else:
                             searchResults.append((movieNameInEnglish, allVersions))
 
@@ -183,15 +182,8 @@ class Subcenter(Subtitle):
         downloadPage = SUBSCENTER_PAGES.DOWN_PAGE % (
             SUBSCENTER_LANGUAGES.HEBREW,
             movieCode,
-            # Replace spaces with their code
             versionSum.replace(' ', '%20'),
             versionCode)
 
         fileData = self.urlHandler.request(self.domain, downloadPage)
         self.manageSubtileFile(fileData, fileName)
-
-if __name__ == "__main__":
-    c = content.Content("game of thrones", "series", version=u'Game.of.Thrones.S04E01.Mini.480p.HDTV.x264-mSD', season="4", episodeNumber="1")
-    sc = Subcenter()
-    g = sc.findSubtitles(c)
-    print 4

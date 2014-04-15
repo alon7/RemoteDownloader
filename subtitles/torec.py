@@ -1,4 +1,4 @@
-import subtitles.subtitle
+import subtitles.subtitlesite
 
 
 class Torec(subtitles.Subtitle):
