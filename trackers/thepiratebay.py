@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import re
-import traceback
 import six
 from utils.urlHandler import URLHandler
 
@@ -17,14 +16,13 @@ class ThePirateBay(object):
     def search(self, contentToDownload):
         page = 0
         total_pages = 1
-        results  = []
+        results = []
         while page < total_pages:
 
             data = self.urlHandler.request(THEPIRATEBAY_PAGES.DOMAIN, THEPIRATEBAY_PAGES.SEARCH % (contentToDownload.modifiedName.replace(' ', '%20'), page))
             page += 1
 
             if data:
-                try:
                     soup = BeautifulSoup(data)
                     results_table = soup.find('table', attrs = {'id': 'searchResult'})
 
@@ -47,6 +45,4 @@ class ThePirateBay(object):
                                 'leechers': result.find_all('td')[3].string,
                                 'link': download['href'],
                             })
-                except Exception, e:
-                    print e
         return results
