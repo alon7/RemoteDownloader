@@ -46,6 +46,7 @@ class Subcenter(SubtitleSite):
 
     @staticmethod
     def getVersionsList(versionsJson):
+        #TODO: FIX THIS... a lot of Unnecessary things!
         """
             This function will get the versions page of the movie/series and
             return a tuple of vesrions summary and a formatted dictionary where
@@ -177,13 +178,3 @@ class Subcenter(SubtitleSite):
                             searchResults.append((movieNameInEnglish, allVersions))
 
         return searchResults
-
-    def downloadSubtitle(self, versionSum, versionCode, movieCode, fileName):
-        downloadPage = SUBSCENTER_PAGES.DOWN_PAGE % (
-            SUBSCENTER_LANGUAGES.HEBREW,
-            movieCode,
-            versionSum.replace(' ', '%20'),
-            versionCode)
-
-        fileData = self.urlHandler.request(self.domain, downloadPage)
-        self.manageSubtileFile(fileData, fileName)

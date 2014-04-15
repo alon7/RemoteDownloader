@@ -1,4 +1,4 @@
-
+#TODO: add matched subtitles and torrent dictionaries!
 
 class Content(object):
     def __init__(self, name, movieOrSeries, version=None, season=0, episodeNumber=0, wholeSeasonFlag=False, wholeSeriesFlag=False):

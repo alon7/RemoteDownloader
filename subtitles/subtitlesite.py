@@ -15,8 +15,9 @@ class SubtitleSite(object):
         self.configuration = ConfigParser.RawConfigParser()
         self.configuration.readfp(open(r"C:\Users\Public\Documents\utorrent\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
 
-    def downloadSubtitle2(self):
-        pass
+    def downloadSubtitle(self, subtitleResult):
+        fileData = self.urlHandler.request(subtitleResult['Domain'], subtitleResult['DownloadPage'])
+        self.manageSubtileFile(fileData, subtitleResult['VerSum'] + '.zip')
 
     @staticmethod
     def manageSubtileFile(fileData, fileName):
