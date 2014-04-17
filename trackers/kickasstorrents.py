@@ -24,8 +24,8 @@ class KickAssTorrents(object):
                 results.append({
                 'name': torrent['title'],
                 'size': bytes_converter(torrent['size'], size_or_speed='size'),
-                'seeders': torrent['seeds'],
-                'leechers': torrent['leechs'],
+                'seeders': int(torrent['seeds']),
+                'leechers': int(torrent['leechs']),
                 'link': torrent['torrentLink']
                 })
         return results

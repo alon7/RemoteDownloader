@@ -1,14 +1,11 @@
 from bs4 import BeautifulSoup
-from urlparse import parse_qs
 import re
-import traceback
 from utils.urlHandler import URLHandler
 
 
 class PUBLICHD_PAGES:
     DOMAIN = 'https://publichd.se'
     SEARCH = '/index.php?page=torrents&active=0&search=%s&order=5&by=2'
-
 
 
 class PublicHD(object):
@@ -33,8 +30,8 @@ class PublicHD(object):
                         results.append({
                             'name': info_url.string,
                             'size': result.find_all('td')[7].string,
-                            'seeders': result.find_all('td')[4].string,
-                            'leechers': result.find_all('td')[5].string,
+                            'seeders': int(result.find_all('td')[4].string),
+                            'leechers': int(result.find_all('td')[5].string),
                             'link': download['href']
                         })
         return results

@@ -37,7 +37,7 @@ def getJson(rawJson):
     return json.loads(rawJson)
 
 
-class Subcenter(SubtitleSite):
+class SubsCenter(SubtitleSite):
     BLACK_LIST_QUALITIES = [u'ALL']
 
     def __init__(self):
@@ -63,7 +63,7 @@ class Subcenter(SubtitleSite):
         if currentLanguageProviders:
             for qualities in currentLanguageProviders.values():
                 for quality, versions in qualities.iteritems():
-                    if quality not in Subcenter.BLACK_LIST_QUALITIES and quality not in totalQualities:
+                    if quality not in SubsCenter.BLACK_LIST_QUALITIES and quality not in totalQualities:
                         totalQualities.append(quality)
 
                         for version in versions.values():
@@ -108,7 +108,7 @@ class Subcenter(SubtitleSite):
         versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
             SUBSCENTER_PAGES.SERIES_JSON % tuple(seriesCode.split("/")))
-        allVersions = Subcenter.getVersionsList(versionsJson)
+        allVersions = SubsCenter.getVersionsList(versionsJson)
         return allVersions
 
     def getEpisodes(self, seriesName, movieCode):
@@ -119,7 +119,7 @@ class Subcenter(SubtitleSite):
             SUBSCENTER_REGEX.SERIES_VAR,
             seriesPage)
         allEpisodes = \
-            Subcenter.getEpisodesList(seriesAreaContent)
+            SubsCenter.getEpisodesList(seriesAreaContent)
 
         for episode in allEpisodes:
             seasonId = str(episode['seasonId'])

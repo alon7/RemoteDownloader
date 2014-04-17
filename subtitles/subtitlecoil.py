@@ -2,7 +2,6 @@
 from subtitles.subtitlesite import SubtitleSite
 from utils import Utils
 from itertools import groupby
-import content
 
 
 class SUBTITLE_PAGES:
