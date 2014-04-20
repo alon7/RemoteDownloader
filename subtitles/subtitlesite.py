@@ -27,7 +27,7 @@ class SubtitleSite(object):
 
     @staticmethod
     def manageSubtileFile(fileData, fileName, contnerFileName):
-        #TODO: rename file to match the content!
+        #TODO: rename file to match the content !
         with open(fileName, "wb") as subFile:
             subFile.write(fileData)
         subFile.close()
