@@ -86,14 +86,15 @@ class SubtitleCoIl(SubtitleSite):
                     page_content = self.urlHandler.request(
                         SUBTITLE_PAGES.DOMAIN,
                         SUBTITLE_PAGES.MOVIE_SUBTITLES % moviecode)
-                    all_vers = SubtitleCoIl.getVersionsList(page_content)
-                    if None != contentToDownload.versions:
-                        for versionDict in all_vers:
-                            if versionDict.get('VerSum') in contentToDownload.versions:
-                                searchResults.append(versionDict)
-                                break  # SHOULD BE REMOVED?
+                    allVersions = SubtitleCoIl.getVersionsList(page_content)
+                    if None != contentToDownload.torrents:
+                        for versionDict in allVersions:
+                            for torrent in contentToDownload.torrents:
+                                if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
+                                    contentToDownload.match.append((torrent, versionDict))
+                                    searchResults.append(versionDict)
                     else:
-                        searchResults.append(all_vers)
+                        searchResults.append(allVersions)
             elif 'series' == contentToDownload.movieOrSeries == type:
                 for result in results:
                     seriescode = result['content']['MovieCode']
@@ -111,16 +112,17 @@ class SubtitleCoIl(SubtitleSite):
                                     if episode['EpisodeNum'] == contentToDownload.episodeNumber or contentToDownload.wholeSeasonFlag or contentToDownload.wholeSeriesFlag:
                                         episodeVersions = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                                                                   SUBTITLE_PAGES.SERIES_EPISODE % (seriescode, seasoncode, episode['EpisodeCode']))
-                                        all_vers = SubtitleCoIl.getVersionsList(episodeVersions)
-                                        if [None] != contentToDownload.versions:
-                                            for versionDict in all_vers:
-                                                if versionDict.get('VerSum') in contentToDownload.versions:
-                                                    searchResults.append(versionDict)
-                                                    break  # SHOULD BE REMOVED?
+                                        allVersions = SubtitleCoIl.getVersionsList(episodeVersions)
+                                        if None != contentToDownload.torrents:
+                                            for versionDict in allVersions:
+                                                for torrent in contentToDownload.torrents:
+                                                    if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
+                                                        contentToDownload.match.append((torrent, versionDict))
+                                                        searchResults.append(versionDict)
                                         else:
-                                            searchResults.append(all_vers)
+                                            searchResults.append(allVersions)
 
-        return searchResults
+        return contentToDownload
 
     def _is_logged_in(self, url):
         data = self.urlHandler.request(self.domain, url)

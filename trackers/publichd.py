@@ -28,8 +28,8 @@ class PublicHD(object):
 
                     if info_url and download:
                         results.append({
-                            'name': info_url.string,
-                            'size': result.find_all('td')[7].string,
+                            'name': str(info_url.string),
+                            'size': str(result.find_all('td')[7].string),
                             'seeders': int(result.find_all('td')[4].string),
                             'leechers': int(result.find_all('td')[5].string),
                             'link': download['href']

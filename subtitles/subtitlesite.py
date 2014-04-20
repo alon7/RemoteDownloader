@@ -3,9 +3,10 @@
 import ConfigParser
 from abc import ABCMeta
 from utils.urlHandler import URLHandler
-from os import path
-from sys import exit, path as sys_path
+import os
+from sys import path as sys_path
 from importlib import import_module
+import zipfile
 
 SUBTITLE_SITE_LIST = ['SubsCenter', 'SubtitleCoIl']
 
@@ -19,23 +20,30 @@ class SubtitleSite(object):
         self.configuration = ConfigParser.RawConfigParser()
         self.configuration.readfp(open(r"C:\Users\Public\Documents\utorrent\uTorrent.Py\configuration\subtitlesConfig.cfg"))  # ?
 
-    def downloadSubtitle(self, subtitleResult):
-        fileData = self.urlHandler.request(subtitleResult['Domain'], subtitleResult['DownloadPage'])
-        self.manageSubtileFile(fileData, subtitleResult['VerSum'] + '.zip')
+    @staticmethod
+    def downloadSubtitle(subtitleResult, path, contnerFileName):
+        fileData = URLHandler().request(subtitleResult['Domain'], subtitleResult['DownloadPage'])
+        SubtitleSite.manageSubtileFile(fileData, os.path.join(path, subtitleResult['VerSum'] + '.zip'), contnerFileName)
 
     @staticmethod
-    def manageSubtileFile(fileData, fileName):
-        #TODO: unzip files!
+    def manageSubtileFile(fileData, fileName, contnerFileName):
+        #TODO: rename file to match the content!
         with open(fileName, "wb") as subFile:
             subFile.write(fileData)
         subFile.close()
+
+        with open(fileName, 'rb') as subtitleFile:
+            subZip = zipfile.ZipFile(subtitleFile)
+            for name in subZip.namelist():
+                if name.endswith('.srt'):
+                    subZip.extract(name, os.path.split(fileName)[0])
 
     @staticmethod
     def classFactory(class_name):
         class_lower_name = class_name.lower()
 
         if class_name in SUBTITLE_SITE_LIST:
-            engines_path = path.dirname(__file__)
+            engines_path = os.path.dirname(__file__)
             if engines_path not in sys_path:
                 sys_path.insert(0, engines_path)
 

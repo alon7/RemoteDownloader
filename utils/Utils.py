@@ -23,3 +23,19 @@ def bytes_converter(num, size_or_speed):
         if num < 1024.0:
             return "%3.1f %s%s" % (num, x, ret_string)
         num /= 1024.0
+
+def versionMatching(torrentName, subtitleName):
+    match = False
+    if torrentName == subtitleName:
+        match = True
+    elif torrentName.replace(' ', '.') == subtitleName.replace(' ', '.'):
+        match = True
+    elif torrentName[:torrentName.find('[')] == subtitleName:
+        match = True
+    elif torrentName[:torrentName.find('[')].replace(' ', '.') == subtitleName.replace(' ', '.'):
+        match = True
+    elif re.sub('[-.]', ' ', torrentName[:torrentName.find('[')]) == re.sub('[-.]', ' ', subtitleName):
+        match = True
+    elif re.sub('[-.]', ' ', torrentName) == re.sub('[-.]', ' ', subtitleName):
+        match = True
+    return match

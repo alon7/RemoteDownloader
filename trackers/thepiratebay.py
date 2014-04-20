@@ -39,7 +39,7 @@ class ThePirateBay(object):
 
                         if link and download:
                             results.append({
-                                'name': link.string,
+                                'name': str(link.string),
                                 'size': size,
                                 'seeders': int(result.find_all('td')[2].string),
                                 'leechers': int(result.find_all('td')[3].string),

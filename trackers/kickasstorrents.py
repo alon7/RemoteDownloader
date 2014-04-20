@@ -22,7 +22,7 @@ class KickAssTorrents(object):
         torrentList = json_dict['list']
         for torrent in torrentList:
                 results.append({
-                'name': torrent['title'],
+                'name': str(torrent['title']),
                 'size': bytes_converter(torrent['size'], size_or_speed='size'),
                 'seeders': int(torrent['seeds']),
                 'leechers': int(torrent['leechs']),

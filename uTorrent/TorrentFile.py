@@ -1,7 +1,7 @@
 #TODO: creae a better enum!
 
 import datetime
-from  utils import Utils
+from utils import Utils
 
 class UITorrentEnum:
     UI_TORRENT_HASH, \
@@ -23,6 +23,7 @@ class UITorrentEnum:
     UI_TORRENT_AVAILABILITY, \
     UI_TORRENT_TORRENT_QUEUE_ORDER, \
     UI_TORRENT_REMAINING = range(19)
+    UI_TORRENT_PATH = 26
 
 
 class UITorrentStatusEnum:
@@ -41,7 +42,7 @@ class TorrentFile(object):
     def __init__(self, torrentjson):
         self.hash = torrentjson[UITorrentEnum.UI_TORRENT_HASH]
         self.status = torrentjson[UITorrentEnum.UI_TORRENT_STATUS]  # UITorrentStatusEnum!
-        self.name = torrentjson[UITorrentEnum.UI_TORRENT_NAME]
+        self.name = torrentjson[UITorrentEnum.UI_TORRENT_NAME].encode('ascii', 'ignore')
         self.size = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_SIZE], 'size')
         self.percent_progress = torrentjson[UITorrentEnum.UI_TORRENT_PERCENT_PROGRESS]
         self.downloaded = Utils.bytes_converter(torrentjson[UITorrentEnum.UI_TORRENT_DOWNLOADED], 'size')
@@ -58,7 +59,7 @@ class TorrentFile(object):
         self.availability = torrentjson[UITorrentEnum.UI_TORRENT_AVAILABILITY]
         self.torrent_queue_order = torrentjson[UITorrentEnum.UI_TORRENT_TORRENT_QUEUE_ORDER]
         self.remaining = torrentjson[UITorrentEnum.UI_TORRENT_REMAINING]
-
+        self.path = torrentjson[UITorrentEnum.UI_TORRENT_PATH]
         self.full_status = self.get_status()
         self.simplified_eta = self.get_eta()
 

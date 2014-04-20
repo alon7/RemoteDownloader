@@ -155,11 +155,12 @@ class SubsCenter(SubtitleSite):
 
             if movieType == 'movie' == contentToDownload.movieOrSeries:
                 allVersions = self.getMovieVersions(movieNameInEnglish)
-                if [None] != contentToDownload.version:
+                if None != contentToDownload.torrents:
                     for versionDict in allVersions:
-                        if versionDict.get('VerSum') in contentToDownload.versions:
-                            searchResults.append(versionDict)
-                            break  # SHOULD BE REMOVED?
+                        for torrent in contentToDownload.torrents:
+                            if Utils.versionMatching(torrent.get('name'), versionDict.get('verSum')):
+                                contentToDownload.match.append((torrent, versionDict))
+                                searchResults.append(versionDict)
                 else:
                     searchResults.append((movieNameInEnglish, allVersions))
 
@@ -169,12 +170,14 @@ class SubsCenter(SubtitleSite):
                             'episode') == contentToDownload.episodeNumber) or (episode.get(
                             'season') == contentToDownload.season and contentToDownload.wholeSeasonFlag) or contentToDownload.wholeSeriesFlag:
                         allVersions = self.getEpisodeVersions(episode)
-                        if [None] != contentToDownload.versions:
+                        if None != contentToDownload.torrents:
                             for versionDict in allVersions:
-                                if versionDict.get('VerSum') in contentToDownload.versions:
-                                    searchResults.append(versionDict)
-                                    break  # SHOULD BE REMOVED?
+                                for torrent in contentToDownload.torrents:
+                                    if Utils.versionMatching(torrent.get('name'), versionDict.get('verSum')):
+                                        contentToDownload.match.append((torrent, versionDict))
+                                        searchResults.append(versionDict)
+
                         else:
                             searchResults.append((movieNameInEnglish, allVersions))
 
-        return searchResults
+        return contentToDownload
