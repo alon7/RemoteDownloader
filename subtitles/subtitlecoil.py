@@ -34,10 +34,12 @@ class SubtitleCoIl(SubtitleSite):
         self._is_logged_in(SUBTITLE_PAGES.DOMAIN + "/")
 
     @staticmethod
+    @Utils.timefunc
     def isSeries(search_content):
         return bool(Utils.getregexresults(SUBTITLE_REGEX.TV_SERIES_RESULTS_PARSER, search_content))
 
     @staticmethod
+    @Utils.timefunc
     def getVersionsList(page_content):
         results = Utils.getregexresults(SUBTITLE_REGEX.SUBTITLE_LIST_PARSER, page_content, True)
         for result in results:
@@ -47,18 +49,21 @@ class SubtitleCoIl(SubtitleSite):
             result.pop('Language', None)  #?
         return results
 
+    @Utils.timefunc
     def getSeasonsList(self, series_code):
         series_page = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                               SUBTITLE_PAGES.SERIES_SUBTITLES % series_code)
         total_seasons = Utils.getregexresults(SUBTITLE_REGEX.TV_SEASON_PATTERN, series_page, True)
         return total_seasons
 
+    @Utils.timefunc
     def getEpisodesList(self, series_code, season_code):
         season_page = self.urlHandler.request(SUBTITLE_PAGES.DOMAIN,
                                               SUBTITLE_PAGES.SERIES_SEASON % (series_code, season_code))
         total_episodes = Utils.getregexresults(SUBTITLE_REGEX.TV_EPISODE_PATTERN, season_page, True)
         return total_episodes
 
+    @Utils.timefunc
     def findSubtitles(self, contentToDownload):
         contentName = contentToDownload.title
         searchResults = []
@@ -91,10 +96,9 @@ class SubtitleCoIl(SubtitleSite):
                         for versionDict in allVersions:
                             for torrent in contentToDownload.torrents:
                                 if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
-                                    contentToDownload.match.append((torrent, versionDict))
-                                    searchResults.append(versionDict)
+                                    searchResults.extend((torrent, versionDict))
                     else:
-                        searchResults.append(allVersions)
+                        searchResults.extend(allVersions)
             elif 'series' == contentToDownload.movieOrSeries == type:
                 for result in results:
                     seriescode = result['content']['MovieCode']
@@ -117,13 +121,13 @@ class SubtitleCoIl(SubtitleSite):
                                             for versionDict in allVersions:
                                                 for torrent in contentToDownload.torrents:
                                                     if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
-                                                        contentToDownload.match.append((torrent, versionDict))
-                                                        searchResults.append(versionDict)
+                                                        searchResults.extend((torrent, versionDict))
                                         else:
-                                            searchResults.append(allVersions)
+                                            searchResults.extend(allVersions)
 
-        return contentToDownload
+        return searchResults
 
+    @Utils.timefunc
     def _is_logged_in(self, url):
         data = self.urlHandler.request(self.domain, url)
         if data is not None and Utils.getregexresults(SUBTITLE_REGEX.SUCCESSFUL_LOGIN, data):
@@ -133,6 +137,7 @@ class SubtitleCoIl(SubtitleSite):
         else:
             return None
 
+    @Utils.timefunc
     def login(self):
         email = self.configuration.get(self.configuration_name, "email")
         password = self.configuration.get(self.configuration_name, "password")
@@ -143,3 +148,10 @@ class SubtitleCoIl(SubtitleSite):
         else:
             self.urlHandler.save_cookie()
             return True
+
+if __name__ == "__main__":
+    #c = content.Content("blue jasmin", "movie")
+    sc = SubtitleCoIl()
+    #g = sc.findSubtitles(c)
+    sc.download_subtitle('260628', "Blue.Jasmine.2013.720p.BluRay.x264-SPARKS.zip")
+    print 4

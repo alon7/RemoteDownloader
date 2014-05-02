@@ -4,6 +4,49 @@ from subtitles.subtitlesite import SubtitleSite, SUBTITLE_SITE_LIST
 from trackers.tracker import TrackerSite, TRACKER_SITE_LIST
 from uTorrent.UTorrentClient import UTorrentClient
 from uTorrent.TorrentFile import TorrentFile
+import threading
+import Queue
+import time
+
+
+class CostumeThread(threading.Thread):
+    def __init__(self, queue, results, subsOrTorrent):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.subsOrTorrent = subsOrTorrent
+        if "subs" == subsOrTorrent:
+            self.subResults = results
+        elif "torrents" == subsOrTorrent:
+            self.torrentResults = results
+
+    def run(self):
+        while True:
+            scraper, func, content = self.queue.get()
+            f = getattr(scraper.__class__, func)
+            res = f(scraper, content)
+            if "subs" == self.subsOrTorrent:
+                self.subResults.extend(res)
+            elif "torrents" == self.subsOrTorrent:
+                self.torrentResults.extend(res)
+
+            self.queue.task_done()
+
+
+def getALL(trackers, subtitlesSites, contentToDownload):
+    queue = Queue.Queue()
+    subResults = []
+    trackerResults = []
+
+    combinedScrapersList = [(subtitlesSite, "findSubtitles", contentToDownload, subResults, "subs") for subtitlesSite in subtitlesSites] + [(tracker, "search", contentToDownload, trackerResults, "torrents") for tracker in trackers]
+    for scraper in combinedScrapersList:
+        th = CostumeThread(queue, scraper[3], scraper[4])
+        th.setDaemon(True)
+        th.start()
+    for scraper in combinedScrapersList:
+        queue.put((scraper[0], scraper[1], scraper[2]))
+    queue.join()
+    return subResults, trackerResults
+
 
 def downloadContent(contentToDownload):
     uTorrentClient = UTorrentClient()
@@ -20,30 +63,28 @@ def downloadContent(contentToDownload):
     SubtitleSite.downloadSubtitle(matchingSubtitle, torrentPath, contnerFileName)
 
 
-def findsubtitles(subtitleSites, contentToDownload):
-    for site in subtitleSites:
-        contentToDownload = site.findSubtitles(contentToDownload)
-    contentToDownload.match = sorted(contentToDownload.match, key=lambda x: x[0]['seeders'])[::-1]
-    return contentToDownload
+def getMatches(torrents, subs):
+    matches = []
+    for torrent in torrents:
+        for sub in subs:
+            if Utils.versionMatching(torrent.get('name'), sub.get('VerSum')):
+                matches.append((torrent, sub))
+                break
+    return matches
 
-
-def getAllTorrents(trackers, contentToDownload):
-    results = []
-    for tracker in trackers:
-        results.extend(tracker.search(contentToDownload))
-    sortedresults = sorted(results, key=lambda k: k['seeders'])[::-1]
-    return sortedresults
 
 if __name__ == "__main__":
-    c = Content("game of thrones", "series", season='3', episodeNumber='9')
+    start = time.time()  # just for debugging - should be removed
+    c = Content("silicon valley", "series", season='1', episodeNumber='1')
     subtitleSites = [SubtitleSite.classFactory(site) for site in SUBTITLE_SITE_LIST]
     trackerSites = [TrackerSite.classFactory(site) for site in TRACKER_SITE_LIST]
 
-    c.torrents = getAllTorrents(trackerSites, c)
-    c = findsubtitles(subtitleSites, c)
-    downloadContent(c)
+    a,b = getALL(trackerSites, subtitleSites, c)
+    matches = getMatches(b, a)
+
+    end = time.time() - start
+    print end
+    #downloadContent(c)
 
     #ut.add_url(c.match[0][0].get('link'))
     #SubtitleSite.downloadSubtitle(c.match[0][1])
-
-    g = 8

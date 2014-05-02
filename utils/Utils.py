@@ -1,6 +1,21 @@
 import re
+import time
+import cProfile
 
 # TODO: unzip subtitles zip files
+
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        #profile = cProfile.Profile()
+        #try:
+            #profile.enable()
+        result = func(*args, **kwargs)
+            #profile.disable()
+        return result
+        #finally:
+            #profile.print_stats(sort="tottime")
+    return profiled_func
 
 
 def getregexresults(pattern, content, with_groups=False):
@@ -24,6 +39,7 @@ def bytes_converter(num, size_or_speed):
             return "%3.1f %s%s" % (num, x, ret_string)
         num /= 1024.0
 
+
 def versionMatching(torrentName, subtitleName):
     match = False
     if torrentName == subtitleName:
@@ -39,3 +55,12 @@ def versionMatching(torrentName, subtitleName):
     elif re.sub('[-.]', ' ', torrentName) == re.sub('[-.]', ' ', subtitleName):
         match = True
     return match
+
+def timefunc(f):
+    def f_timer(*args, **kwargs):
+        #start = time.time()
+        result = f(*args, **kwargs)
+        #end = time.time()
+        #print f.__name__, 'took', end - start, 'time', f.func_globals.get("__name__")
+        return result
+    return f_timer

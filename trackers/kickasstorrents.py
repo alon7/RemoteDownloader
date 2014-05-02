@@ -1,10 +1,10 @@
 import json
 from utils.urlHandler import URLHandler
 from utils.Utils import bytes_converter
-
+from utils import Utils
 
 class KICKASSTORRENT_PAGES:
-    DOMAIN = 'https://kickass.to'
+    DOMAIN = 'http://kickass.to'
     SEARCH = '/json.php?q={0}%20seeds:1&field=seeders&sorder=desc'  # minimum seeders 1 should be dynamic!
 
 
@@ -15,6 +15,7 @@ class KickAssTorrents(object):
     def __init__(self):
         self.urlHandler = URLHandler()
 
+    @Utils.do_cprofile
     def search(self, contentToDownload):
         results = []
         json_data = self.urlHandler.request(KICKASSTORRENT_PAGES.DOMAIN, KICKASSTORRENT_PAGES.SEARCH.format(contentToDownload.modifiedName.replace(' ', '%20')))

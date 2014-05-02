@@ -45,6 +45,7 @@ class SubsCenter(SubtitleSite):
         self.configuration_name = "subcenter"
 
     @staticmethod
+    @Utils.timefunc
     def getVersionsList(versionsJson):
         #TODO: FIX THIS... a lot of Unnecessary things!
         """
@@ -69,7 +70,7 @@ class SubsCenter(SubtitleSite):
                         for version in versions.values():
                             verSum = version['subtitle_version']
                             allVersions.append({
-                                "verSum": verSum,
+                                "VerSum": verSum,
                                 'Domain': SUBSCENTER_PAGES.DOMAIN,
                                 'DownloadPage': SUBSCENTER_PAGES.DOWN_PAGE % (SUBSCENTER_LANGUAGES.HEBREW,
                                                                               version['id'],
@@ -79,6 +80,7 @@ class SubsCenter(SubtitleSite):
         return allVersions
 
     @staticmethod
+    @Utils.timefunc
     def getEpisodesList(seriesAreaContent):
         """
             This function will get the series page, and return all the episodes
@@ -95,6 +97,7 @@ class SubsCenter(SubtitleSite):
                                     'episodeId': jsonedSeriesPageDict[season][episode]['episode_id']})
         return allEpisodes
 
+    @Utils.timefunc
     def getMovieVersions(self, movieCode):
         versionsJson = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
@@ -103,6 +106,7 @@ class SubsCenter(SubtitleSite):
         allVersions = self.getVersionsList(versionsJson)
         return allVersions
 
+    @Utils.timefunc
     def getEpisodeVersions(self, episdoe):
         seriesCode = episdoe.get('seriesCode')
         versionsJson = self.urlHandler.request(
@@ -111,6 +115,7 @@ class SubsCenter(SubtitleSite):
         allVersions = SubsCenter.getVersionsList(versionsJson)
         return allVersions
 
+    @Utils.timefunc
     def getEpisodes(self, seriesName, movieCode):
         seriesPage = self.urlHandler.request(
             SUBSCENTER_PAGES.DOMAIN,
@@ -132,6 +137,7 @@ class SubsCenter(SubtitleSite):
                    'episode': episodeId,
                    'type': 'series'}
 
+    @Utils.timefunc
     def findSubtitles(self, contentToDownload):
         contentName = contentToDownload.title
         searchResults = []
@@ -158,11 +164,10 @@ class SubsCenter(SubtitleSite):
                 if None != contentToDownload.torrents:
                     for versionDict in allVersions:
                         for torrent in contentToDownload.torrents:
-                            if Utils.versionMatching(torrent.get('name'), versionDict.get('verSum')):
-                                contentToDownload.match.append((torrent, versionDict))
-                                searchResults.append(versionDict)
+                            if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
+                                searchResults.extend((torrent, versionDict))
                 else:
-                    searchResults.append((movieNameInEnglish, allVersions))
+                    searchResults.extend(allVersions)
 
             elif movieType == 'series' == contentToDownload.movieOrSeries:
                 for episode in self.getEpisodes(movieNameInEnglish, movieCode):
@@ -173,11 +178,10 @@ class SubsCenter(SubtitleSite):
                         if None != contentToDownload.torrents:
                             for versionDict in allVersions:
                                 for torrent in contentToDownload.torrents:
-                                    if Utils.versionMatching(torrent.get('name'), versionDict.get('verSum')):
-                                        contentToDownload.match.append((torrent, versionDict))
-                                        searchResults.append(versionDict)
+                                    if Utils.versionMatching(torrent.get('name'), versionDict.get('VerSum')):
+                                        searchResults.extend((torrent, versionDict))
 
                         else:
-                            searchResults.append((movieNameInEnglish, allVersions))
+                            searchResults.extend(allVersions)
 
-        return contentToDownload
+        return searchResults

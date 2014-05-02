@@ -2,10 +2,11 @@ from bs4 import BeautifulSoup
 import re
 import six
 from utils.urlHandler import URLHandler
+from utils import Utils
 
 
 class THEPIRATEBAY_PAGES:
-    DOMAIN = 'https://thepiratebay.se'
+    DOMAIN = 'http://thepiratebay.se'
     SEARCH = '/search/%s/%s/7/0'
 
 
@@ -13,6 +14,7 @@ class ThePirateBay(object):
     def __init__(self):
         self.urlHandler = URLHandler()
 
+    @Utils.do_cprofile
     def search(self, contentToDownload):
         page = 0
         total_pages = 1
@@ -39,7 +41,7 @@ class ThePirateBay(object):
 
                         if link and download:
                             results.append({
-                                'name': str(link.string),
+                                'name': str(link.string.encode('ascii', 'ignore')),
                                 'size': size,
                                 'seeders': int(result.find_all('td')[2].string),
                                 'leechers': int(result.find_all('td')[3].string),
